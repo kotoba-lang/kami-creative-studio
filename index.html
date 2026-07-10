@@ -1,1 +1,126 @@
-<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KAMI Creative Studio</title><style>body{margin:auto;max-width:900px;padding:28px;background:#0b1020;color:#e7ecf7;font:16px system-ui}section{background:#151d32;padding:20px;border-radius:14px;margin:16px 0}input,textarea,select,button{box-sizing:border-box;width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #34405d;background:#0d1425;color:#e7ecf7}button{background:#70e0c3;color:#071015;font-weight:bold;cursor:pointer}code,pre{white-space:pre-wrap;word-break:break-word}.note{color:#aeb9d4}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:600px){.grid{grid-template-columns:1fr}}</style><body><h1>KAMI Creative Studio</h1><p class="note">Model → Rig → Motion と Music を、Murakumo job manifest に統合します。GPU資格情報は保存しません。</p><section><div class="grid"><label>Murakumo endpoint（任意）<input id="endpoint" placeholder="https://murakumo.cloud/api/gen"></label><label>Motion<select id="motion"><option>idle</option><option>walk</option><option>dance</option><option>gesture</option></select></label></div><label>Creative brief<textarea id="brief" rows="4" placeholder="例: 雨の東京を歩くVRMキャラクター、静かなシンセBGM"></textarea></label><label>Reference image / model CID（任意）<input id="ref" placeholder="bafy… または https://…"></label><button id="build">プロジェクトを設計</button><button id="submit">Endpoint へ送信</button></section><section><h2>統合プロジェクト</h2><pre id="out">入力するとここに CID-linked pipeline manifest を生成します。</pre></section><script>const $=id=>document.getElementById(id);let manifest;function build(){let prompt=$('brief').value.trim(),ref=$('ref').value.trim(),motion=$('motion').value;manifest={schema:'kami.creative-project/v1',brief:prompt,stages:[{id:'model',modality:'3d',model:'trellis',refs:ref?[ref]:[],requires:'remote-gpu-capability'},{id:'rig',modality:'rig',model:'unirig',from:'model',requires:'remote-gpu-capability'},{id:'motion',modality:'motion',model:'edn-motion-v1',from:'rig',params:{preset:motion,duration:2},requires:'mac-mini-control-worker'},{id:'music',modality:'music',model:'ace-step',prompt,requires:'remote-gpu-capability'}],policy:{no_silent_fallback:true,artifacts:'CID'}};$('out').textContent=JSON.stringify(manifest,null,2)}$('build').onclick=build;$('submit').onclick=async()=>{build();let url=$('endpoint').value.trim();if(!url)return alert('Endpoint を明示してください。offline manifest は上に表示済みです。');let r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(manifest)});$('out').textContent=await r.text()};</script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b12">
+  <meta name="description" content="KAMI Creative Studio — 3D model, rig, motion and music generation on the Murakumo creative pipeline.">
+  <title>KAMI Creative Studio</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#workspace">ワークスペースへ移動</a>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="KAMI Creative Studio home">
+      <span class="brand-mark" aria-hidden="true">神</span>
+      <span>KAMI <small>CREATIVE STUDIO</small></span>
+    </a>
+    <div class="top-actions">
+      <span id="modeBadge" class="badge offline">OFFLINE</span>
+      <button id="saveButton" class="button quiet" type="button">保存</button>
+      <button id="exportButton" class="button quiet" type="button">書き出す</button>
+    </div>
+  </header>
+
+  <main id="workspace" class="workspace">
+    <aside class="brief-panel" aria-labelledby="briefTitle">
+      <div>
+        <p class="eyebrow">PROJECT BRIEF</p>
+        <h1 id="briefTitle">ひとつの世界を、<br>ひとつの流れで。</h1>
+        <p class="subtle">モデル、リグ、モーション、音楽をCIDで結び、Mac mini fleetが制作工程を管理します。</p>
+      </div>
+
+      <form id="projectForm">
+        <label>プロジェクト名
+          <input id="projectName" name="projectName" value="Untitled character" maxlength="80" required>
+        </label>
+        <label>Creative brief
+          <textarea id="brief" name="brief" rows="7" maxlength="2000" placeholder="雨の東京を歩くVRMキャラクター。静かなシンセBGM。" required></textarea>
+          <span class="field-meta"><span id="briefCount">0</span>/2000</span>
+        </label>
+        <label>参照画像 / モデル CID
+          <input id="reference" name="reference" placeholder="bafy… または https://…">
+        </label>
+        <label>Murakumo endpoint <span class="optional">任意</span>
+          <input id="endpoint" name="endpoint" type="url" placeholder="https://murakumo.example/api/gen">
+        </label>
+        <button class="button primary" type="submit">制作プランを生成</button>
+      </form>
+
+      <div class="privacy-note">
+        <span aria-hidden="true">◇</span>
+        <p><strong>Credential-free by design.</strong><br>入力はブラウザ内に保存され、指定したendpoint以外へ送信しません。</p>
+      </div>
+    </aside>
+
+    <section class="canvas" aria-labelledby="pipelineTitle">
+      <div class="canvas-head">
+        <div>
+          <p class="eyebrow">CREATIVE GRAPH</p>
+          <h2 id="pipelineTitle">制作パイプライン</h2>
+        </div>
+        <div class="view-switch" role="group" aria-label="表示切替">
+          <button class="active" type="button" data-view="graph">Graph</button>
+          <button type="button" data-view="manifest">Manifest</button>
+        </div>
+      </div>
+
+      <div id="graphView" class="graph-view">
+        <div class="pipeline" aria-label="Generation pipeline">
+          <article class="stage" data-stage="model">
+            <div class="stage-number">01</div><div class="stage-icon">⬡</div>
+            <div><p>MODEL</p><h3>3D Geometry</h3><span>TRELLIS / Hunyuan3D</span></div>
+            <span class="stage-state remote">REMOTE GPU</span>
+          </article>
+          <div class="connector"><i></i></div>
+          <article class="stage" data-stage="rig">
+            <div class="stage-number">02</div><div class="stage-icon">⌘</div>
+            <div><p>RIG</p><h3>Humanoid Rig</h3><span>UniRig / Heuristic</span></div>
+            <span class="stage-state remote">REMOTE GPU</span>
+          </article>
+          <div class="connector"><i></i></div>
+          <article class="stage selected" data-stage="motion">
+            <div class="stage-number">03</div><div class="stage-icon">⌁</div>
+            <div><p>MOTION</p><h3>Animation Clip</h3><span>Validated EDN + retarget</span></div>
+            <span class="stage-state local">MAC FLEET</span>
+          </article>
+          <div class="connector"><i></i></div>
+          <article class="stage" data-stage="music">
+            <div class="stage-number">04</div><div class="stage-icon">♫</div>
+            <div><p>MUSIC</p><h3>Soundtrack</h3><span>ACE-Step / Stable Audio</span></div>
+            <span class="stage-state remote">REMOTE GPU</span>
+          </article>
+        </div>
+
+        <section class="inspector" aria-labelledby="inspectorTitle">
+          <div class="inspector-copy">
+            <p class="eyebrow">SELECTED STAGE</p>
+            <h3 id="inspectorTitle">Motion</h3>
+            <p id="inspectorDescription" class="subtle">リグ済みモデルへ、検証可能なEDN animation clipを適用します。</p>
+          </div>
+          <div id="motionControls" class="control-grid">
+            <label>Preset
+              <select id="motionPreset"><option value="idle">Idle</option><option value="walk">Walk</option><option value="dance" selected>Dance</option><option value="gesture">Gesture</option></select>
+            </label>
+            <label>Duration
+              <div class="range-line"><input id="duration" type="range" min="1" max="30" value="4"><output id="durationValue">4s</output></div>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <section id="manifestView" class="manifest-view" hidden>
+        <div class="manifest-head"><span>kami.creative-project/v1</span><button id="copyButton" class="button quiet" type="button">コピー</button></div>
+        <pre id="manifestOutput" tabindex="0">制作プランを生成すると、ここにmanifestが表示されます。</pre>
+      </section>
+
+      <footer class="runbar">
+        <div><span class="pulse" aria-hidden="true"></span><strong id="projectStatus">READY TO PLAN</strong><small id="statusDetail">Offline manifest mode</small></div>
+        <button id="runButton" class="button run" type="button" disabled>Murakumoで実行</button>
+      </footer>
+    </section>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js" defer></script>
+</body>
+</html>

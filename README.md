@@ -1,5 +1,41 @@
 # KAMI Creative Studio
 
-Credential-free GitHub Pages UI for a CID-linked Murakumo creative project: 3D model → rig → motion plus music. It exports an offline manifest or posts only to an endpoint explicitly entered by the user.
+Open, credential-free creator UI for a CID-linked Murakumo pipeline:
 
-The Mac mini fleet controls and validates motion; 3D, auto-rig, and music require an explicitly available remote GPU capability. See ADR-2607102000 in `com-junkawasaki/root`.
+```text
+brief / reference
+  → 3D model (TRELLIS / Hunyuan3D)
+  → humanoid rig (UniRig / explicit heuristic)
+  → motion (validated EDN clip on the Mac mini control fleet)
+  → music (ACE-Step / Stable Audio)
+  → kami.creative-project/v1 manifest
+```
+
+Open the public Studio: <https://kotoba-lang.github.io/kami-creative-studio/>
+
+## What is live
+
+- Responsive, accessible project workspace
+- Offline project planning and browser-local persistence
+- JSON manifest preview, copy and download
+- Explicit Murakumo endpoint submission with visible success/failure state
+- No credentials, API keys, analytics or third-party scripts
+- GitHub Pages deployment on every `main` update
+
+Heavy model, rig and music inference requires a configured remote GPU capability. The Mac mini fleet controls the job graph and owns bounded EDN motion generation/validation; the UI never claims that CUDA-only models execute locally.
+
+## Project contract
+
+The generated document is `kami.creative-project/v1`. Every stage declares its modality, model, input relationship, output kinds and required execution capability. `noSilentFallback` is always true.
+
+## Local development
+
+```sh
+python3 -m http.server 4173
+```
+
+Then open `http://localhost:4173`. The application is dependency-free HTML/CSS/JavaScript.
+
+## License
+
+MIT

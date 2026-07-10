@@ -3,7 +3,7 @@
   "$id": "https://kotoba-lang.github.io/kami-creative-studio/kami.creative-project.schema.json",
   "title": "KAMI Creative Project",
   "type": "object",
-  "required": ["schema", "id", "name", "brief", "stages", "policy"],
+  "required": ["schema", "id", "name", "brief", "stages", "character", "policy"],
   "properties": {
     "schema": { "const": "kami.creative-project/v1" },
     "id": { "type": "string", "minLength": 1 },
@@ -22,6 +22,14 @@
           "requires": { "enum": ["remote-gpu-capability", "mac-mini-control-worker"] },
           "output": { "type": "array", "items": { "type": "string" } }
         }
+      }
+    },
+    "character": {
+      "type": "object",
+      "required": ["editor", "operations"],
+      "properties": {
+        "editor": { "const": "kotoba-lang/kisekae" },
+        "operations": { "type": "array", "items": { "type": "object" } }
       }
     },
     "policy": {

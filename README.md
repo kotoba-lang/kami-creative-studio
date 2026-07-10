@@ -16,6 +16,9 @@ Open the public Studio: <https://kotoba-lang.github.io/kami-creative-studio/>
 ## What is live
 
 - Responsive, accessible project workspace
+- Realtime local/generated VRM and GLB preview with camera controls and animation playback
+- Integrated `kotoba-lang/kisekae` character edit operations for parts, materials, expressions and motion
+- Murakumo progress polling and automatic preview when a generated artifact URL arrives
 - Offline project planning and browser-local persistence
 - JSON manifest preview, copy and download
 - Explicit Murakumo endpoint submission with visible success/failure state
@@ -31,10 +34,12 @@ The generated document is `kami.creative-project/v1`. Every stage declares its m
 ## Local development
 
 ```sh
-python3 -m http.server 4173
+npm ci
+npm run release
+python3 -m http.server 4173 --directory public
 ```
 
-Then open `http://localhost:4173`. The application is dependency-free HTML/CSS/JavaScript.
+Then open `http://localhost:4173`. The authored UI is ClojureScript Hiccup/Reagent. Styling is extracted from `shadow.css/css` forms; the GitHub Pages shell is generated from Hiccup during release. There are no hand-authored HTML or CSS files.
 
 ## License
 

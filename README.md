@@ -18,6 +18,7 @@ Open the public Studio: <https://kotoba-lang.github.io/kami-creative-studio/>
 - Responsive, accessible project workspace
 - Realtime local/generated VRM and GLB preview with camera controls and animation playback
 - Integrated `kotoba-lang/kisekae` character edit operations for parts, materials, expressions and motion
+- Independent CLJC trait-composition domain with one asset per slot and deterministic seeded randomization
 - Murakumo progress polling and automatic preview when a generated artifact URL arrives
 - Build-generated `KAMI Prism` sample project and embedded-buffer glTF, loaded into the viewer on startup
 - Offline project planning and browser-local persistence
@@ -43,6 +44,10 @@ python3 -m http.server 4173 --directory public
 Then open `http://localhost:4173`. The authored UI is ClojureScript Hiccup/Reagent. Styling is extracted from `shadow.css/css` forms; the GitHub Pages shell is generated from Hiccup during release. There are no hand-authored HTML or CSS files.
 
 The sample source is `resources/samples/kami-sample.edn`. `npm run release` deterministically generates `public/samples/kami-sample.gltf` and its project manifest; generated files are not committed.
+
+## Design reference
+
+The asset-pack separation and point-and-click composition UX are independently designed with M3-org/CharacterStudio as a product reference. No CharacterStudio source code or assets are copied; KAMI's implementation is CLJC/CLJS Hiccup with shadow-css and its own manifest contract.
 
 ## License
 

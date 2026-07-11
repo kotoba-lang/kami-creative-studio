@@ -19,3 +19,15 @@
                                                      {:kind "glb" :url "x.glb"}]}))))
   (is (= 100 (core/progress {:progress 200})))
   (is (= 0 (core/progress {:progress -2}))))
+
+(deftest composes-independent-trait-catalog
+  (let [catalog {:body [{:id "body-a" :source "cid:body-a"}]
+                 :hair [{:id "hair-a" :source "cid:hair-a"}
+                        {:id "hair-b" :source "cid:hair-b"}]}
+        selection (core/seeded-selection catalog 7)
+        operations (core/selection-operations selection)]
+    (is (= selection (core/seeded-selection catalog 7)))
+    (is (= #{"body" "hair"} (set (map :part/kind operations))))
+    (is (= "hair-a" (get-in (core/select-trait selection
+                                               {:slot :hair :id "hair-a" :source "cid:hair-a"})
+                             [:hair :id])))))

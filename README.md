@@ -18,6 +18,8 @@ Open the public Studio: <https://kotoba-lang.github.io/kami-creative-studio/>
 - Responsive, accessible project workspace
 - Realtime local/generated VRM and GLB preview with camera controls and animation playback
 - Integrated `kotoba-lang/kisekae` character edit operations for parts, materials, expressions and motion
+- Capability-authorized `kisekae` composition plans backed by real upstream VRM assets
+- Release-generated real hair, face and outfit compositions with donor skins rebound to the base humanoid
 - Independent CLJC trait-composition domain with one asset per slot and deterministic seeded randomization
 - iPad-first single-window workspace: Library sidebar, Character Canvas, Inspector and Motion/Music Timeline in one viewport
 - Murakumo progress polling and automatic preview when a generated artifact URL arrives
@@ -48,6 +50,8 @@ Then open `http://localhost:4173`. The authored UI is ClojureScript Hiccup/Reage
 The sample source is `resources/samples/kami-sample.edn`. `npm run release` deterministically generates `public/samples/kami-sample.gltf` and its project manifest; generated files are not committed.
 
 The real-character demo references pixiv's `VRM1_Constraint_Twist_Sample.vrm` directly from the `pixiv/three-vrm` repository. Its embedded VRM metadata permits redistribution and identifies pixiv Inc. as author; KAMI does not copy the binary into this repository.
+
+During release, the worker-side CLJC compositor also fetches the official VRM Consortium Seed-san sample and generates three derived fixtures: Seed hair, face and outfit on the pixiv constraint-sample skeleton. The sources are parsed once, donor skins are rebound through `kotoba-lang/kisekae`, and the resulting VRM 1.0 files are deployment artifacts rather than committed binaries. Arbitrary multi-part combinations remain capability-gated Murakumo jobs; the UI reports that requirement instead of silently showing an unchanged avatar.
 
 ## Browser runtime boundary
 

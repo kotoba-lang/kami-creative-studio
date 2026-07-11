@@ -21,6 +21,7 @@ Open the public Studio: <https://kotoba-lang.github.io/kami-creative-studio/>
 - Independent CLJC trait-composition domain with one asset per slot and deterministic seeded randomization
 - Murakumo progress polling and automatic preview when a generated artifact URL arrives
 - Build-generated `KAMI Prism` sample project and embedded-buffer glTF, loaded into the viewer on startup
+- Real VRM 1.0 humanoid display using pixiv's redistribution-permitted constraint sample, loaded from its upstream source URL
 - Offline project planning and browser-local persistence
 - JSON manifest preview, copy and download
 - Explicit Murakumo endpoint submission with visible success/failure state
@@ -44,6 +45,14 @@ python3 -m http.server 4173 --directory public
 Then open `http://localhost:4173`. The authored UI is ClojureScript Hiccup/Reagent. Styling is extracted from `shadow.css/css` forms; the GitHub Pages shell is generated from Hiccup during release. There are no hand-authored HTML or CSS files.
 
 The sample source is `resources/samples/kami-sample.edn`. `npm run release` deterministically generates `public/samples/kami-sample.gltf` and its project manifest; generated files are not committed.
+
+The real-character demo references pixiv's `VRM1_Constraint_Twist_Sample.vrm` directly from the `pixiv/three-vrm` repository. Its embedded VRM metadata permits redistribution and identifies pixiv Inc. as author; KAMI does not copy the binary into this repository.
+
+## Browser runtime boundary
+
+- `kotoba-lang/webgpu` is the canonical browser GPU executor: CLJS calls the JavaScript WebGPU API directly (`navigator.gpu`, `requestAdapter`, `requestDevice`) and consumes EDN render-IR. It does not require Rust or Wasm.
+- Kotoba Wasm remains the sandboxed guest-logic/capability layer. It can produce or transform scene intent, while the browser host executes rendering.
+- This Studio currently uses `model-viewer` for portable glTF/VRM geometry preview. Direct `kami.webgpu` rendering is a separate opt-in renderer path, not falsely reported as active here.
 
 ## Design reference
 

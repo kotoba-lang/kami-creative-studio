@@ -36,7 +36,7 @@
 (def $viewer (css {:width "100%" :height "430px" :background "radial-gradient(circle at 50% 42%,#263247,#101621 50%,#090d14)"}
                   ["@media(max-width:650px)" {:height "330px"}]))
 (def $empty (css {:height "100%" :display "grid" :place-content "center" :text-align "center" :gap "6px" :color "#8c98aa"}))
-(def $preview-actions (css {:display "grid" :grid-template-columns "auto auto 1fr auto" :gap "10px" :align-items "end" :padding "14px 18px"}
+(def $preview-actions (css {:display "grid" :grid-template-columns "auto auto auto 1fr auto" :gap "10px" :align-items "end" :padding "14px 18px"}
                            ["@media(max-width:650px)" {:grid-template-columns "1fr"}]))
 (def $file (css {:border "1px solid #33415a" :border-radius "8px" :padding "11px 14px" :cursor "pointer" :position "relative" :overflow "hidden"}))
 (def $hidden-file (css {:position "absolute" :opacity "0" :width "1px" :height "1px"}))
@@ -65,6 +65,11 @@
 (def $runbar (css {:position "absolute" :left "0" :right "0" :bottom "0" :min-height "72px" :border-top "1px solid #253044" :background "#0b1019"
                   :display "flex" :align-items "center" :justify-content "space-between" :gap "12px" :padding "12px clamp(18px,4vw,52px)"}))
 (def $toast (css {:position "fixed" :right "20px" :bottom "92px" :background "#172131" :border "1px solid #33415a" :padding "11px 15px" :border-radius "8px" :z-index "10"}))
+(def $runtime (css {:display "flex" :flex-wrap "wrap" :gap "7px" :padding "0 18px 14px" :color "#8c98aa" :font "10px ui-monospace"}))
+(def $source-link (css {:color "#80ead0" :text-decoration "none"}))
+
+(def official-vrm-url
+  "https://raw.githubusercontent.com/pixiv/three-vrm/release/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm")
 
 (defonce state
   (r/atom {:name "Untitled character" :brief "" :reference "" :endpoint "" :artifact-url ""
@@ -129,6 +134,11 @@
       (.catch (fn [e]
                 (swap! state assoc :status :failed)
                 (notify! (str "sample読込失敗: " (.-message e)))))))
+
+(defn load-official-vrm! []
+  (swap! state assoc :name "VRM1 Constraint Character" :status :loading :progress 15)
+  (load-artifact! official-vrm-url)
+  (notify! "pixiv公式VRM sampleをsource URLから読み込みました"))
 
 (declare poll-job!)
 (defn handle-job-response! [body]
@@ -211,8 +221,18 @@
      [:div {:class $preview-actions}
       [:label {:class $file} "VRM / GLBを開く" [:input {:class $hidden-file :type "file" :accept ".vrm,.glb,.gltf" :on-change file-change!}]]
       (button "Sampleを読込" load-sample!)
+      (button "実VRM Character" load-official-vrm!)
       (field "Artifact URL" [:input {:class $input :type "url" :value artifact-url :placeholder "https://…/character.vrm" :on-change #(setv! :artifact-url %)}])
       (button "表示" #(load-artifact! (:artifact-url @state)))]
+     [:div {:class $runtime}
+      [:span "VIEWER: model-viewer / glTF+VRM geometry"]
+      [:span "·"]
+      [:span (if (some? (.-gpu js/navigator)) "WEBGPU: AVAILABLE (direct CLJS executor opt-in)" "WEBGPU: UNAVAILABLE")]
+      [:span "·"]
+      [:span "WASM: kotoba guest logic only"]
+      [:span "·"]
+      [:a {:class $source-link :href "https://github.com/pixiv/three-vrm" :target "_blank" :rel "noreferrer"}
+       "VRM sample © pixiv Inc. / redistribution allowed"]]
      (when (and (pos? progress) (< progress 100))
        [:div {:class $progress} [:i {:class $progress-bar :style {:width (str progress "%")}}] [:span {:class $progress-label} (str progress "%")]])]))
 
@@ -289,4 +309,5 @@
 (defn ^:export init! []
   (set! (.-className js/document.body) $body)
   (rdom/render [app] (.getElementById js/document "app"))
-  (load-sample!))
+  (load-sample!)
+  (js/setTimeout load-official-vrm! 500))

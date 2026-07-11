@@ -71,24 +71,25 @@
 
 (def official-vrm-url
   "https://raw.githubusercontent.com/pixiv/three-vrm/release/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm")
+(def seed-vrm-url
+  "https://raw.githubusercontent.com/vrm-c/vrm-specification/master/samples/Seed-san/vrm/Seed-san.vrm")
 
 (defonce state
   (r/atom {:name "Untitled character" :brief "" :reference "" :endpoint "" :artifact-url ""
            :motion-preset :dance :duration 4 :edits [] :tab :editor :status :ready :progress 0
-           :manifest nil :toast nil :object-url nil :selection {} :random-seed 1}))
+           :manifest nil :toast nil :object-url nil :selection {} :random-seed 1
+           :composition-state :idle :composition-error nil :composition-plan nil}))
 
 (def trait-catalog
-  {:body [{:id "prism" :label "Prism" :source "sample://body/prism"}
-          {:id "slender" :label "Slender" :source "sample://body/slender"}]
-   :hair [{:id "halo" :label "Halo" :source "sample://hair/halo"}
-          {:id "bob" :label "Bob" :source "sample://hair/bob"}
-          {:id "flow" :label "Flow" :source "sample://hair/flow"}]
-   :face [{:id "calm" :label "Calm" :source "sample://face/calm"}
-          {:id "bright" :label "Bright" :source "sample://face/bright"}]
-   :outfit [{:id "mint" :label "Mint" :source "sample://outfit/mint"}
-            {:id "indigo" :label "Indigo" :source "sample://outfit/indigo"}]
-   :accessory [{:id "none" :label "None" :source "sample://accessory/none"}
-               {:id "orbit" :label "Orbit" :source "sample://accessory/orbit"}]})
+  {:body [{:id "seed-san" :label "Seed-san" :source seed-vrm-url}
+          {:id "constraint" :label "Constraint" :source official-vrm-url}]
+   :hair [{:id "seed-hair" :label "Seed Hair" :source seed-vrm-url}
+          {:id "constraint-hair" :label "Brown Hair" :source official-vrm-url}]
+   :face [{:id "seed-face" :label "Seed Face" :source seed-vrm-url}
+          {:id "constraint-face" :label "Soft Face" :source official-vrm-url}]
+   :outfit [{:id "seed-outfit" :label "Seed Suit" :source seed-vrm-url}
+            {:id "constraint-outfit" :label "Casual" :source official-vrm-url}]
+   :accessory [{:id "none" :label "None" :source nil}]})
 
 (defn setv! [k e] (swap! state assoc k (.. e -target -value)))
 (defn notify! [s] (swap! state assoc :toast s) (js/setTimeout #(swap! state assoc :toast nil) 2200))
@@ -115,11 +116,31 @@
                (try (js->clj (js/JSON.parse text) :keywordize-keys true)
                     (catch :default _ {:message text}))))))
 
+(defn compose-selection! [selection]
+  (try
+    (let [{:keys [plan]} (core/composition-context selection)
+          artifact (core/preview-artifact selection {:constraint-url official-vrm-url
+                                                      :seed-url seed-vrm-url})]
+      (swap! state assoc :composition-plan plan :composition-error nil)
+      (if artifact
+        (do (swap! state assoc :composition-state :ready :status :loading :progress 90)
+            (load-artifact! artifact)
+            (notify! "build生成済み実VRM compositionを表示しました"))
+        (do (swap! state assoc :composition-state :remote-required :status :planned)
+            (notify! "複数part compositionはMurakumo endpointで生成してください"))))
+    (catch :default e
+      (swap! state assoc :composition-state :failed :composition-error (.-message e))
+      (notify! (str "capability plan失敗: " (.-message e))))))
+
 (defn load-sample! []
   (-> (js/fetch "samples/kami-sample.project.json")
       (.then parse-json)
       (.then (fn [project]
-               (let [selection (core/seeded-selection trait-catalog 1)
+               (let [selection {:body (second (:body trait-catalog))
+                                :hair (second (:hair trait-catalog))
+                                :face (second (:face trait-catalog))
+                                :outfit (second (:outfit trait-catalog))
+                                :accessory (first (:accessory trait-catalog))}
                      edits (vec (concat (get-in project [:character :operations])
                                         (core/selection-operations selection)))
                      project (assoc-in project [:character :operations] edits)]
@@ -193,7 +214,8 @@
   (let [non-trait-ops (remove #(= "part/set" (:op/type %)) (:edits @state))]
     (swap! state assoc :selection selection
            :edits (vec (concat non-trait-ops (core/selection-operations selection))))
-    (manifest!)))
+    (manifest!)
+    (compose-selection! selection)))
 
 (defn choose-trait! [slot asset]
   (apply-selection! (core/select-trait (:selection @state) (assoc asset :slot slot)))
@@ -243,7 +265,13 @@
      [:div {:class $eyebrow} "VRM CHARACTER EDITOR · kotoba-lang/kisekae"]
      [:h3 "Character composition"]
      [:div {:class $catalog-head}
-      [:div [:strong "Trait catalog"] [:div {:class $muted} "独立asset pack / one selection per slot"]]
+      [:div [:strong "Real VRM asset pack"]
+       [:div {:class $muted} (case (:composition-state @state)
+                               :loading "Fetching · parsing · skin rebinding…"
+                               :ready "Composed artifact is visible"
+                               :remote-required "Multiple parts · Murakumo build required"
+                               :failed (str "Failed: " (:composition-error @state))
+                               "Select a part to compose")]]
       (button (str "Randomize · " (:random-seed @state)) randomize!)]
      (for [slot core/trait-order]
        ^{:key slot}
@@ -256,7 +284,8 @@
                      :class (str $trait-card (when (= (:id asset) (get-in @state [:selection slot :id]))
                                                (str " " $trait-selected)))
                      :on-click #(choose-trait! slot asset)}
-            [:strong (:label asset)] [:div {:class $muted} (:id asset)]])]])
+            [:strong (:label asset)]
+            [:div {:class $muted} (if (:source asset) "VRM 1.0 · upstream" "No mesh")]])]])
      [:div {:class $grid}
       (field "Part" [:select {:class $input :value (name (or (:part-kind @state) :hair)) :on-change #(swap! state assoc :part-kind (keyword (.. % -target -value)))}
                      (for [v ["hair" "face" "outfit" "accessory"]] ^{:key v} [:option {:value v} (str/capitalize v)])])

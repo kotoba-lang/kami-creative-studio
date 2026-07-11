@@ -31,3 +31,31 @@
     (is (= "hair-a" (get-in (core/select-trait selection
                                                {:slot :hair :id "hair-a" :source "cid:hair-a"})
                              [:hair :id])))))
+
+(deftest builds-authorized-kisekae-composition-context
+  (let [base "https://assets.test/base.vrm"
+        donor "https://assets.test/donor.vrm"
+        {:keys [spec caps plan]}
+        (core/composition-context
+         {:body {:id "base" :source base}
+          :hair {:id "hair" :source donor}
+          :face {:id "base-face" :source base}
+          :outfit {:id "base-outfit" :source base}
+          :accessory {:id "none" :source nil}})]
+    (is (= base (get-in spec [:spec/base :vrm/url])))
+    (is (= [:hair] (mapv :part/kind (:spec/parts spec))))
+    (is (every? (comp seq :cap/provenance) caps))
+    (is (= :asset/fetch (get-in plan [:plan/phases 0 :phase])))
+    (is (= :vrm/export (get-in plan [:plan/phases 8 :phase])))))
+
+(deftest resolves-real-preview-artifacts-without-fallback
+  (let [constraint "https://assets.test/constraint.vrm"
+        seed "https://assets.test/seed.vrm"
+        opts {:constraint-url constraint :seed-url seed}
+        base {:body {:source constraint} :hair {:source constraint}
+              :face {:source constraint} :outfit {:source constraint}}
+        hair (assoc base :hair {:source seed})
+        multi (assoc hair :outfit {:source seed})]
+    (is (= constraint (core/preview-artifact base opts)))
+    (is (= "samples/constraint-seed-hair.vrm" (core/preview-artifact hair opts)))
+    (is (nil? (core/preview-artifact multi opts)) "multi-part requires Murakumo")))

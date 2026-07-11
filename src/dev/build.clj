@@ -3,7 +3,11 @@
             [clojure.edn :as edn]
             [clojure.data.json :as json]
             [hiccup2.core :as h]
-            [shadow.css.build :as css])
+            [shadow.css.build :as css]
+            [vrm.parse :as vrm-parse]
+            [kisekae.spec :as kisekae-spec]
+            [kisekae.edit :as kisekae-edit]
+            [kisekae.build :as kisekae-build])
   (:import [java.nio ByteBuffer ByteOrder]
            [java.util Base64]))
 
@@ -75,9 +79,37 @@
     (spit (io/file "public/samples/kami-sample.gltf") (json/write-str gltf))
     (spit (io/file "public/samples/kami-sample.project.json") (json/write-str project))))
 
+(def constraint-vrm-url
+  "https://raw.githubusercontent.com/pixiv/three-vrm/release/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm")
+(def seed-vrm-url
+  "https://raw.githubusercontent.com/vrm-c/vrm-specification/master/samples/Seed-san/vrm/Seed-san.vrm")
+
+(defn- url-bytes [url]
+  (with-open [in (io/input-stream url)]
+    (mapv #(bit-and (int %) 255) (.readAllBytes in))))
+
+(defn- build-real-vrm-samples! []
+  (let [docs {constraint-vrm-url (vrm-parse/parse-vrm (url-bytes constraint-vrm-url))
+              seed-vrm-url (vrm-parse/parse-vrm (url-bytes seed-vrm-url))}]
+    (doseq [kind [:hair :face :outfit]
+            :let [spec (-> (kisekae-spec/new-spec
+                            {:id (str "constraint-seed-" (name kind))
+                             :name (str "Constraint + Seed " (name kind))
+                             :base-vrm-url constraint-vrm-url})
+                           (kisekae-edit/apply-op
+                            {:op/type :op/add-part
+                             :part {:part/kind kind
+                                    :part/source {:vrm/url seed-vrm-url}}}))
+                  bytes (kisekae-build/export-bytes
+                         (kisekae-build/build-document spec docs))]]
+      (with-open [out (io/output-stream
+                       (io/file "public/samples" (str "constraint-seed-" (name kind) ".vrm")))]
+        (.write out (byte-array (map unchecked-byte bytes)))))))
+
 (defn release [_]
   (build-css!)
   (build-sample!)
+  (build-real-vrm-samples!)
   (spit (io/file "public/index.html") (str "<!doctype html>" (h/html shell)))
   (io/copy (io/file "kami.creative-project.schema.json")
            (io/file "public/kami.creative-project.schema.json"))

@@ -6,67 +6,68 @@
             [shadow.css :refer [css]]
             [kami.creative-studio.core :as core]))
 
-(def $body (css {:margin "0" :background "#080b12" :color "#f0f3f8"
+(def $body (css {:margin "0" :background "#080b12" :color "#f0f3f8" :overflow "hidden"
                  :font-family "Inter,ui-sans-serif,system-ui,-apple-system,Hiragino Sans,sans-serif"}))
-(def $top (css {:min-height "64px" :display "flex" :align-items "center" :justify-content "space-between"
-                :padding "0 24px" :border-bottom "1px solid #253044" :background "#090d15" :position "sticky" :top "0" :z-index "5"}))
+(def $top (css {:height "54px" :display "grid" :grid-template-columns "1fr auto 1fr" :align-items "center"
+                :padding "0 14px" :border-bottom "1px solid #253044" :background "#111722e8" :backdrop-filter "blur(20px)" :z-index "5"}))
 (def $brand (css {:font-weight "900" :letter-spacing ".08em" :color "#f0f3f8" :text-decoration "none"}))
-(def $actions (css {:display "flex" :gap "8px" :align-items "center"}))
+(def $actions (css {:display "flex" :gap "8px" :align-items "center" :justify-content "flex-end"}))
 (def $badge (css {:font-size "10px" :font-weight "800" :letter-spacing ".12em" :border "1px solid #33415a" :border-radius "20px" :padding "6px 9px"}))
-(def $workspace (css {:display "grid" :grid-template-columns "minmax(300px,360px) 1fr" :min-height "calc(100vh - 64px)"}
-                     ["@media(max-width:850px)" {:grid-template-columns "1fr"}]))
-(def $aside (css {:padding "36px 28px" :border-right "1px solid #253044" :background "#0a0f18"}
-                 ["@media(max-width:850px)" {:border-right "0" :border-bottom "1px solid #253044"}]))
+(def $workspace (css {:display "grid" :grid-template-columns "240px minmax(420px,1fr) 330px" :grid-template-rows "minmax(0,1fr) 112px"
+                      :height "calc(100vh - 54px)" :min-width "960px"}))
+(def $aside (css {:padding "18px 14px" :border-right "1px solid #253044" :background "#0d131e" :overflow-y "auto"}))
 (def $eyebrow (css {:font-family "ui-monospace,monospace" :font-size "10px" :font-weight "800" :letter-spacing ".18em" :color "#80ead0"}))
-(def $title (css {:font-size "clamp(30px,4vw,46px)" :line-height "1.13" :margin "10px 0 14px"}))
+(def $title (css {:font-size "20px" :line-height "1.2" :margin "7px 0 8px"}))
 (def $muted (css {:color "#8c98aa" :line-height "1.6"}))
-(def $form (css {:display "grid" :gap "14px" :margin-top "28px"}))
+(def $form (css {:display "grid" :gap "10px" :margin-top "16px"}))
 (def $label (css {:display "grid" :gap "6px" :font-size "12px" :font-weight "700" :color "#b9c1ce"}))
 (def $input (css {:width "100%" :box-sizing "border-box" :border "1px solid #253044" :background "#0b1019" :color "#f0f3f8"
                   :border-radius "8px" :padding "11px 12px" :font "inherit"}
                  ["&:focus" {:outline "1px solid #80ead0" :border-color "#80ead0"}]))
-(def $button (css {:border "1px solid #33415a" :background "transparent" :color "#f0f3f8" :border-radius "8px" :padding "10px 14px"
+(def $button (css {:border "1px solid #33415a" :background "#131b28" :color "#f0f3f8" :border-radius "10px" :padding "8px 11px" :min-height "44px"
                    :font-weight "800" :cursor "pointer"}
                   ["&:hover" {:border-color "#80ead0"}] ["&:disabled" {:opacity "0.35" :cursor "not-allowed"}]))
 (def $primary (css {:background "#80ead0" :border-color "#80ead0" :color "#07110e"}))
-(def $main (css {:min-width "0" :padding "32px clamp(18px,4vw,52px) 100px" :position "relative"}))
+(def $main (css {:min-width "0" :padding "14px" :background "#080d15" :overflow "hidden"}))
 (def $head (css {:display "flex" :justify-content "space-between" :align-items "end" :gap "12px" :margin-bottom "24px"}))
-(def $preview (css {:max-width "900px" :margin "0 auto 26px" :border "1px solid #253044" :border-radius "14px" :overflow "hidden" :background "#0d141f"}))
+(def $preview (css {:height "100%" :display "grid" :grid-template-rows "52px minmax(0,1fr) auto auto" :border "1px solid #253044" :border-radius "16px" :overflow "hidden" :background "#0d141f"}))
 (def $preview-head (css {:display "flex" :justify-content "space-between" :align-items "center" :padding "14px 18px" :border-bottom "1px solid #253044"}))
-(def $viewer (css {:width "100%" :height "430px" :background "radial-gradient(circle at 50% 42%,#263247,#101621 50%,#090d14)"}
-                  ["@media(max-width:650px)" {:height "330px"}]))
+(def $viewer (css {:width "100%" :height "100%" :min-height "300px" :background "radial-gradient(circle at 50% 42%,#263247,#101621 50%,#090d14)"}))
 (def $empty (css {:height "100%" :display "grid" :place-content "center" :text-align "center" :gap "6px" :color "#8c98aa"}))
-(def $preview-actions (css {:display "grid" :grid-template-columns "auto auto auto 1fr auto" :gap "10px" :align-items "end" :padding "14px 18px"}
-                           ["@media(max-width:650px)" {:grid-template-columns "1fr"}]))
+(def $preview-actions (css {:display "flex" :gap "7px" :align-items "center" :padding "9px 12px" :overflow-x "auto"}
+                           ["& label" {:min-width "210px"}]))
 (def $file (css {:border "1px solid #33415a" :border-radius "8px" :padding "11px 14px" :cursor "pointer" :position "relative" :overflow "hidden"}))
 (def $hidden-file (css {:position "absolute" :opacity "0" :width "1px" :height "1px"}))
 (def $progress (css {:height "26px" :background "#090d15" :position "relative" :border-top "1px solid #253044"}))
 (def $progress-bar (css {:height "100%" :background "linear-gradient(90deg,#375f78,#80ead0)" :transition "width .25s"}))
 (def $progress-label (css {:position "absolute" :inset "0" :display "grid" :place-content "center" :font "800 10px ui-monospace"}))
-(def $tabs (css {:display "flex" :gap "6px" :margin "0 auto 18px" :max-width "900px"}))
-(def $panel (css {:max-width "900px" :margin "0 auto" :border "1px solid #253044" :border-radius "14px" :padding "20px" :background "#0d141f"}))
+(def $tabs (css {:display "flex" :gap "6px" :padding "10px 12px" :border-bottom "1px solid #253044"}))
+(def $panel (css {:height "100%" :box-sizing "border-box" :padding "16px" :background "#0d141f" :overflow-y "auto"}))
 (def $grid (css {:display "grid" :grid-template-columns "repeat(2,minmax(0,1fr))" :gap "12px"}
                  ["@media(max-width:650px)" {:grid-template-columns "1fr"}]))
 (def $ops (css {:color "#8c98aa" :font "11px/1.7 ui-monospace" :padding-left "22px"}))
 (def $catalog-head (css {:display "flex" :align-items "center" :justify-content "space-between" :gap "10px" :margin "20px 0 10px"}))
-(def $trait-row (css {:display "grid" :grid-template-columns "88px 1fr" :gap "10px" :align-items "start" :margin-bottom "10px"}
+(def $trait-row (css {:display "grid" :grid-template-columns "62px 1fr" :gap "8px" :align-items "start" :margin-bottom "8px"}
                      ["@media(max-width:650px)" {:grid-template-columns "1fr"}]))
 (def $trait-label (css {:padding-top "10px" :font "800 10px ui-monospace" :letter-spacing ".12em" :color "#80ead0"}))
-(def $trait-options (css {:display "grid" :grid-template-columns "repeat(3,minmax(0,1fr))" :gap "8px"}
+(def $trait-options (css {:display "grid" :grid-template-columns "repeat(2,minmax(0,1fr))" :gap "6px"}
                          ["@media(max-width:650px)" {:grid-template-columns "1fr"}]))
 (def $trait-card (css {:border "1px solid #253044" :background "#0a1019" :color "#b9c1ce" :border-radius "9px"
                        :padding "10px" :cursor "pointer" :text-align "left" :font "inherit"}
                       ["&:hover" {:border-color "#80ead0"}]))
 (def $trait-selected (css {:border-color "#80ead0" :background "#142a2a" :color "#f0f3f8"}))
-(def $pipeline (css {:display "grid" :grid-template-columns "repeat(4,1fr)" :gap "10px" :margin-top "22px"}
+(def $pipeline (css {:display "grid" :grid-template-columns "repeat(4,1fr)" :gap "8px"}
                      ["@media(max-width:700px)" {:grid-template-columns "1fr 1fr"}]))
-(def $stage (css {:border "1px solid #253044" :border-radius "10px" :padding "13px" :background "#111824"}))
+(def $stage (css {:border "1px solid #253044" :border-radius "10px" :padding "9px" :background "#111824"}))
 (def $stage-name (css {:font-size "10px" :color "#80ead0" :font-weight "800" :letter-spacing ".12em"}))
 (def $runbar (css {:position "absolute" :left "0" :right "0" :bottom "0" :min-height "72px" :border-top "1px solid #253044" :background "#0b1019"
                   :display "flex" :align-items "center" :justify-content "space-between" :gap "12px" :padding "12px clamp(18px,4vw,52px)"}))
 (def $toast (css {:position "fixed" :right "20px" :bottom "92px" :background "#172131" :border "1px solid #33415a" :padding "11px 15px" :border-radius "8px" :z-index "10"}))
 (def $runtime (css {:display "flex" :flex-wrap "wrap" :gap "7px" :padding "0 18px 14px" :color "#8c98aa" :font "10px ui-monospace"}))
 (def $source-link (css {:color "#80ead0" :text-decoration "none"}))
+(def $inspector (css {:grid-column "3" :grid-row "1" :border-left "1px solid #253044" :min-width "0" :overflow "hidden" :display "grid" :grid-template-rows "auto minmax(0,1fr)"}))
+(def $timeline (css {:grid-column "1 / 4" :grid-row "2" :border-top "1px solid #253044" :background "#101722" :padding "10px 14px" :display "grid" :grid-template-columns "180px 1fr auto" :gap "12px" :align-items "center"}))
+(def $toolbar-title (css {:font-size "13px" :font-weight "700" :text-align "center"}))
 
 (def official-vrm-url
   "https://raw.githubusercontent.com/pixiv/three-vrm/release/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm")
@@ -282,28 +283,34 @@
 (defn app []
   (let [{:keys [name brief reference endpoint tab status toast]} @state]
     [:div
-     [:header {:class $top} [:a {:class $brand :href "#"} "神 KAMI · CREATIVE STUDIO"]
-      [:div {:class $actions} [:span {:class $badge} (if (str/blank? endpoint) "OFFLINE" "ENDPOINT READY")] (button "Plan更新" manifest!)]]
+     [:header {:class $top}
+      [:a {:class $brand :href "#"} "神 KAMI"]
+      [:div {:class $toolbar-title} (str name " · Creative Workspace")]
+      [:div {:class $actions} [:span {:class $badge} (str/upper-case (clojure.core/name status))] (button "生成" submit! true (str/blank? endpoint))]]
      [:main {:class $workspace}
-      [:aside {:class $aside} [:div {:class $eyebrow} "PROJECT BRIEF"] [:h1 {:class $title} "生成から編集、previewまで。"]
-       [:p {:class $muted} "Model、Rig、Motion、MusicをCIDで結び、VRMをブラウザ上でリアルタイムに確認します。"]
+      [:aside {:class $aside} [:div {:class $eyebrow} "LIBRARY · PROJECT"] [:h1 {:class $title} "Character Project"]
+       [:p {:class $muted} "Project、asset、生成sourceを一つのworkspaceで管理します。"]
        [:div {:class $form}
         (field "プロジェクト名" [:input {:class $input :value name :on-change #(setv! :name %)}])
-        (field "Creative brief" [:textarea {:class $input :rows 6 :value brief :on-change #(setv! :brief %)}])
+        (field "Creative brief" [:textarea {:class $input :rows 3 :value brief :on-change #(setv! :brief %)}])
         (field "参照画像 / CID" [:input {:class $input :value reference :on-change #(setv! :reference %)}])
         (field "Murakumo endpoint" [:input {:class $input :type "url" :value endpoint :placeholder "https://…/api/gen" :on-change #(setv! :endpoint %)}])
-        (button "制作planを生成" manifest! true)]]
+        (button "Planを更新" manifest! true)
+        (button "Sample Project" load-sample!)
+        [:div {:class $eyebrow} "RUNTIME"]
+        [:div {:class $muted} "CLJS host · WebGPU direct\nKotoba Wasm · guest logic"]]]
       [:section {:class $main}
-       [:div {:class $head} [:div [:div {:class $eyebrow} "LIVE CHARACTER WORKSPACE"] [:h2 "Realtime Preview + VRM Editor"]]]
-       [preview]
+       [preview]]
+      [:aside {:class $inspector}
        [:div {:class $tabs}
-        (button "Character Editor" #(swap! state assoc :tab :editor) (= tab :editor))
+        (button "Inspector" #(swap! state assoc :tab :editor) (= tab :editor))
         (button "Manifest" #(swap! state assoc :tab :manifest) (= tab :manifest))]
        (if (= tab :editor) [editor]
-           [:section {:class $panel} [:pre (with-out-str (cljs.pprint/pprint (:manifest @state)))]])
+           [:section {:class $panel} [:div {:class $eyebrow} "PROJECT MANIFEST"] [:pre (with-out-str (cljs.pprint/pprint (:manifest @state)))]])]
+      [:footer {:class $timeline}
+       [:div [:div {:class $eyebrow} "TIMELINE"] [:strong (str/capitalize (clojure.core/name (:motion-preset @state))) " · " (:duration @state) "s"]]
        [pipeline]
-       [:footer {:class $runbar} [:div [:strong (str/upper-case (clojure.core/name status))] [:div {:class $muted} "Murakumo job + CID artifacts"]]
-        (button "Murakumoで生成" submit! true (or (str/blank? endpoint) (= status :submitting)))]]]
+       [:div {:class $actions} (button "◀" #(notify! "previous frame")) (button "▶" #(notify! "motion preview")) (button "●" #(notify! "record armed"))]]]
      (when toast [:div {:class $toast} toast])]))
 
 (defn ^:export init! []

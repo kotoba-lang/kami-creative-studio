@@ -26,6 +26,12 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+      - name: Checkout capability compositor siblings
+        run: |
+          git clone --depth 1 https://github.com/kotoba-lang/kisekae.git ../kisekae
+          git clone --depth 1 https://github.com/kotoba-lang/org-vrmc-vrm.git ../org-vrmc-vrm
+          git clone --depth 1 https://github.com/kotoba-lang/org-khronos-glb.git ../org-khronos-glb
+          git clone --depth 1 https://github.com/kotoba-lang/kotoba-lang.git ../kotoba-lang
       - run: npm ci
       - run: npm run release
       - uses: actions/configure-pages@v5

@@ -19,6 +19,7 @@ Open the public Studio: <https://kotoba-lang.github.io/kami-creative-studio/>
 - Realtime local/generated VRM and GLB preview with camera controls and animation playback
 - Integrated `kotoba-lang/kisekae` character edit operations for parts, materials, expressions and motion
 - Independent CLJC trait-composition domain with one asset per slot and deterministic seeded randomization
+- iPad-first single-window workspace: Library sidebar, Character Canvas, Inspector and Motion/Music Timeline in one viewport
 - Murakumo progress polling and automatic preview when a generated artifact URL arrives
 - Build-generated `KAMI Prism` sample project and embedded-buffer glTF, loaded into the viewer on startup
 - Real VRM 1.0 humanoid display using pixiv's redistribution-permitted constraint sample, loaded from its upstream source URL
@@ -53,6 +54,10 @@ The real-character demo references pixiv's `VRM1_Constraint_Twist_Sample.vrm` di
 - `kotoba-lang/webgpu` is the canonical browser GPU executor: CLJS calls the JavaScript WebGPU API directly (`navigator.gpu`, `requestAdapter`, `requestDevice`) and consumes EDN render-IR. It does not require Rust or Wasm.
 - Kotoba Wasm remains the sandboxed guest-logic/capability layer. It can produce or transform scene intent, while the browser host executes rendering.
 - This Studio currently uses `model-viewer` for portable glTF/VRM geometry preview. Direct `kami.webgpu` rendering is a separate opt-in renderer path, not falsely reported as active here.
+
+## Workspace UX
+
+The product is a single-window creative app rather than a sequence of web pages. Its information architecture follows Apple HIG patterns—persistent toolbar, sidebar, content canvas, inspector and bottom timeline—with 44px minimum primary controls. At the iPad landscape baseline (1024×768), the document has no page-level overflow; dense panels scroll internally without moving the canvas.
 
 ## Design reference
 

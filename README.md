@@ -19,6 +19,7 @@ Open the public Studio: <https://kotoba-lang.github.io/kami-creative-studio/>
 - Realtime local/generated VRM and GLB preview with camera controls and animation playback
 - Integrated `kotoba-lang/kisekae` character edit operations for parts, materials, expressions and motion
 - Murakumo progress polling and automatic preview when a generated artifact URL arrives
+- Build-generated `KAMI Prism` sample project and embedded-buffer glTF, loaded into the viewer on startup
 - Offline project planning and browser-local persistence
 - JSON manifest preview, copy and download
 - Explicit Murakumo endpoint submission with visible success/failure state
@@ -40,6 +41,8 @@ python3 -m http.server 4173 --directory public
 ```
 
 Then open `http://localhost:4173`. The authored UI is ClojureScript Hiccup/Reagent. Styling is extracted from `shadow.css/css` forms; the GitHub Pages shell is generated from Hiccup during release. There are no hand-authored HTML or CSS files.
+
+The sample source is `resources/samples/kami-sample.edn`. `npm run release` deterministically generates `public/samples/kami-sample.gltf` and its project manifest; generated files are not committed.
 
 ## License
 

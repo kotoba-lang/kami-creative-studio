@@ -36,7 +36,7 @@
 (def $viewer (css {:width "100%" :height "430px" :background "radial-gradient(circle at 50% 42%,#263247,#101621 50%,#090d14)"}
                   ["@media(max-width:650px)" {:height "330px"}]))
 (def $empty (css {:height "100%" :display "grid" :place-content "center" :text-align "center" :gap "6px" :color "#8c98aa"}))
-(def $preview-actions (css {:display "grid" :grid-template-columns "auto 1fr auto" :gap "10px" :align-items "end" :padding "14px 18px"}
+(def $preview-actions (css {:display "grid" :grid-template-columns "auto auto 1fr auto" :gap "10px" :align-items "end" :padding "14px 18px"}
                            ["@media(max-width:650px)" {:grid-template-columns "1fr"}]))
 (def $file (css {:border "1px solid #33415a" :border-radius "8px" :padding "11px 14px" :cursor "pointer" :position "relative" :overflow "hidden"}))
 (def $hidden-file (css {:position "absolute" :opacity "0" :width "1px" :height "1px"}))
@@ -85,6 +85,22 @@
       (.then (fn [text]
                (try (js->clj (js/JSON.parse text) :keywordize-keys true)
                     (catch :default _ {:message text}))))))
+
+(defn load-sample! []
+  (-> (js/fetch "samples/kami-sample.project.json")
+      (.then parse-json)
+      (.then (fn [project]
+               (swap! state assoc
+                      :name (:name project)
+                      :brief (:brief project)
+                      :manifest project
+                      :edits (vec (get-in project [:character :operations]))
+                      :status :sample)
+               (load-artifact! (core/artifact-url project))
+               (notify! "sample projectを生成物から読み込みました")))
+      (.catch (fn [e]
+                (swap! state assoc :status :failed)
+                (notify! (str "sample読込失敗: " (.-message e)))))))
 
 (declare poll-job!)
 (defn handle-job-response! [body]
@@ -150,6 +166,7 @@
       [:div {:slot "poster" :class $empty} [:strong "3D artifactを読み込む"] [:span "生成完了後は自動表示されます"]]]
      [:div {:class $preview-actions}
       [:label {:class $file} "VRM / GLBを開く" [:input {:class $hidden-file :type "file" :accept ".vrm,.glb,.gltf" :on-change file-change!}]]
+      (button "Sampleを読込" load-sample!)
       (field "Artifact URL" [:input {:class $input :type "url" :value artifact-url :placeholder "https://…/character.vrm" :on-change #(setv! :artifact-url %)}])
       (button "表示" #(load-artifact! (:artifact-url @state)))]
      (when (and (pos? progress) (< progress 100))
@@ -212,4 +229,5 @@
 
 (defn ^:export init! []
   (set! (.-className js/document.body) $body)
-  (rdom/render [app] (.getElementById js/document "app")))
+  (rdom/render [app] (.getElementById js/document "app"))
+  (load-sample!))

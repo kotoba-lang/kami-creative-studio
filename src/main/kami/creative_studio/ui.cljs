@@ -48,6 +48,16 @@
 (def $grid (css {:display "grid" :grid-template-columns "repeat(2,minmax(0,1fr))" :gap "12px"}
                  ["@media(max-width:650px)" {:grid-template-columns "1fr"}]))
 (def $ops (css {:color "#8c98aa" :font "11px/1.7 ui-monospace" :padding-left "22px"}))
+(def $catalog-head (css {:display "flex" :align-items "center" :justify-content "space-between" :gap "10px" :margin "20px 0 10px"}))
+(def $trait-row (css {:display "grid" :grid-template-columns "88px 1fr" :gap "10px" :align-items "start" :margin-bottom "10px"}
+                     ["@media(max-width:650px)" {:grid-template-columns "1fr"}]))
+(def $trait-label (css {:padding-top "10px" :font "800 10px ui-monospace" :letter-spacing ".12em" :color "#80ead0"}))
+(def $trait-options (css {:display "grid" :grid-template-columns "repeat(3,minmax(0,1fr))" :gap "8px"}
+                         ["@media(max-width:650px)" {:grid-template-columns "1fr"}]))
+(def $trait-card (css {:border "1px solid #253044" :background "#0a1019" :color "#b9c1ce" :border-radius "9px"
+                       :padding "10px" :cursor "pointer" :text-align "left" :font "inherit"}
+                      ["&:hover" {:border-color "#80ead0"}]))
+(def $trait-selected (css {:border-color "#80ead0" :background "#142a2a" :color "#f0f3f8"}))
 (def $pipeline (css {:display "grid" :grid-template-columns "repeat(4,1fr)" :gap "10px" :margin-top "22px"}
                      ["@media(max-width:700px)" {:grid-template-columns "1fr 1fr"}]))
 (def $stage (css {:border "1px solid #253044" :border-radius "10px" :padding "13px" :background "#111824"}))
@@ -59,7 +69,20 @@
 (defonce state
   (r/atom {:name "Untitled character" :brief "" :reference "" :endpoint "" :artifact-url ""
            :motion-preset :dance :duration 4 :edits [] :tab :editor :status :ready :progress 0
-           :manifest nil :toast nil :object-url nil}))
+           :manifest nil :toast nil :object-url nil :selection {} :random-seed 1}))
+
+(def trait-catalog
+  {:body [{:id "prism" :label "Prism" :source "sample://body/prism"}
+          {:id "slender" :label "Slender" :source "sample://body/slender"}]
+   :hair [{:id "halo" :label "Halo" :source "sample://hair/halo"}
+          {:id "bob" :label "Bob" :source "sample://hair/bob"}
+          {:id "flow" :label "Flow" :source "sample://hair/flow"}]
+   :face [{:id "calm" :label "Calm" :source "sample://face/calm"}
+          {:id "bright" :label "Bright" :source "sample://face/bright"}]
+   :outfit [{:id "mint" :label "Mint" :source "sample://outfit/mint"}
+            {:id "indigo" :label "Indigo" :source "sample://outfit/indigo"}]
+   :accessory [{:id "none" :label "None" :source "sample://accessory/none"}
+               {:id "orbit" :label "Orbit" :source "sample://accessory/orbit"}]})
 
 (defn setv! [k e] (swap! state assoc k (.. e -target -value)))
 (defn notify! [s] (swap! state assoc :toast s) (js/setTimeout #(swap! state assoc :toast nil) 2200))
@@ -90,12 +113,17 @@
   (-> (js/fetch "samples/kami-sample.project.json")
       (.then parse-json)
       (.then (fn [project]
-               (swap! state assoc
-                      :name (:name project)
-                      :brief (:brief project)
-                      :manifest project
-                      :edits (vec (get-in project [:character :operations]))
-                      :status :sample)
+               (let [selection (core/seeded-selection trait-catalog 1)
+                     edits (vec (concat (get-in project [:character :operations])
+                                        (core/selection-operations selection)))
+                     project (assoc-in project [:character :operations] edits)]
+                 (swap! state assoc
+                        :name (:name project)
+                        :brief (:brief project)
+                        :manifest project
+                        :selection selection
+                        :edits edits
+                        :status :sample))
                (load-artifact! (core/artifact-url project))
                (notify! "sample projectを生成物から読み込みました")))
       (.catch (fn [e]
@@ -150,6 +178,22 @@
     (swap! state assoc :material-color color)
     (swap! state update :edits conj {:op/type "material/base-color" :value color})))
 
+(defn apply-selection! [selection]
+  (let [non-trait-ops (remove #(= "part/set" (:op/type %)) (:edits @state))]
+    (swap! state assoc :selection selection
+           :edits (vec (concat non-trait-ops (core/selection-operations selection))))
+    (manifest!)))
+
+(defn choose-trait! [slot asset]
+  (apply-selection! (core/select-trait (:selection @state) (assoc asset :slot slot)))
+  (notify! (str (:label asset) " を " (name slot) " に選択しました")))
+
+(defn randomize! []
+  (let [seed (inc (:random-seed @state))]
+    (swap! state assoc :random-seed seed)
+    (apply-selection! (core/seeded-selection trait-catalog seed))
+    (notify! (str "seed " seed " でcharacterを構成しました"))))
+
 (defn field [label child] [:label {:class $label} label child])
 (defn button [label on-click & [primary? disabled?]]
   [:button {:class (str $button (when primary? (str " " $primary))) :on-click on-click :disabled disabled? :type "button"} label])
@@ -177,6 +221,21 @@
     [:section {:class $panel}
      [:div {:class $eyebrow} "VRM CHARACTER EDITOR · kotoba-lang/kisekae"]
      [:h3 "Character composition"]
+     [:div {:class $catalog-head}
+      [:div [:strong "Trait catalog"] [:div {:class $muted} "独立asset pack / one selection per slot"]]
+      (button (str "Randomize · " (:random-seed @state)) randomize!)]
+     (for [slot core/trait-order]
+       ^{:key slot}
+       [:div {:class $trait-row}
+        [:div {:class $trait-label} (str/upper-case (name slot))]
+        [:div {:class $trait-options}
+         (for [asset (get trait-catalog slot)]
+           ^{:key (:id asset)}
+           [:button {:type "button"
+                     :class (str $trait-card (when (= (:id asset) (get-in @state [:selection slot :id]))
+                                               (str " " $trait-selected)))
+                     :on-click #(choose-trait! slot asset)}
+            [:strong (:label asset)] [:div {:class $muted} (:id asset)]])]])
      [:div {:class $grid}
       (field "Part" [:select {:class $input :value (name (or (:part-kind @state) :hair)) :on-change #(swap! state assoc :part-kind (keyword (.. % -target -value)))}
                      (for [v ["hair" "face" "outfit" "accessory"]] ^{:key v} [:option {:value v} (str/capitalize v)])])

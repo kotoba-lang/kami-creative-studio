@@ -2,6 +2,32 @@
 
 (def stage-order [:model :rig :motion :music])
 
+(def trait-order [:body :hair :face :outfit :accessory])
+
+(defn select-trait
+  "Select one asset per slot without coupling the composition domain to a renderer."
+  [selection {:keys [slot id source]}]
+  (assoc selection slot {:id id :source source}))
+
+(defn selection-operations [selection]
+  (->> trait-order
+       (keep (fn [slot]
+               (when-let [{:keys [id source]} (get selection slot)]
+                 {:op/type "part/set" :part/kind (name slot)
+                  :part/id id :part/source source})))
+       vec))
+
+(defn seeded-selection
+  "Deterministic catalog selection. Same seed and catalog produce the same character."
+  [catalog seed]
+  (reduce
+   (fn [selection [index slot]]
+     (let [assets (vec (get catalog slot))]
+       (if (seq assets)
+         (assoc selection slot (nth assets (mod (+ seed (* 17 index)) (count assets))))
+         selection)))
+   {} (map-indexed vector trait-order)))
+
 (defn project-manifest
   [{:keys [id name brief reference motion-preset duration edits created-at]}]
   {:schema "kami.creative-project/v1"

@@ -75,7 +75,7 @@
   "https://raw.githubusercontent.com/vrm-c/vrm-specification/master/samples/Seed-san/vrm/Seed-san.vrm")
 
 (defonce state
-  (r/atom {:name "Untitled character" :brief "" :reference "" :endpoint "" :artifact-url ""
+  (r/atom {:name "Untitled character" :brief "" :reference "" :endpoint "" :api-key "" :artifact-url ""
            :motion-preset :dance :duration 4 :edits [] :tab :editor :status :ready :progress 0
            :manifest nil :toast nil :object-url nil :selection {} :random-seed 1
            :composition-state :idle :composition-error nil :composition-plan nil}))
@@ -115,6 +115,10 @@
       (.then (fn [text]
                (try (js->clj (js/JSON.parse text) :keywordize-keys true)
                     (catch :default _ {:message text}))))))
+
+(defn request-headers []
+  (cond-> {"content-type" "application/json"}
+    (not (str/blank? (:api-key @state))) (assoc "x-api-key" (:api-key @state))))
 
 (declare submit-compose!)
 (defn compose-selection! [selection]
@@ -173,7 +177,7 @@
 
 (defn poll-job! [url]
   (js/setTimeout
-   #(-> (js/fetch url)
+   #(-> (js/fetch url #js {:headers (clj->js (request-headers))})
         (.then parse-json)
         (.then (fn [body]
                  (handle-job-response! body)
@@ -186,7 +190,7 @@
 (defn post-job! [payload success-message]
   (swap! state assoc :status :submitting :progress 1)
   (-> (js/fetch (:endpoint @state)
-                #js {:method "POST" :headers #js {"content-type" "application/json"}
+                #js {:method "POST" :headers (clj->js (request-headers))
                      :body (js/JSON.stringify (clj->js payload))})
       (.then (fn [response]
                (if (.-ok response) (parse-json response)
@@ -330,7 +334,7 @@
      ^{:key id} [:div {:class $stage} [:div {:class $stage-name} label] [:strong detail]])])
 
 (defn app []
-  (let [{:keys [name brief reference endpoint tab status toast]} @state]
+  (let [{:keys [name brief reference endpoint api-key tab status toast]} @state]
     [:div
      [:header {:class $top}
       [:a {:class $brand :href "#"} "神 KAMI"]
@@ -343,7 +347,10 @@
         (field "プロジェクト名" [:input {:class $input :value name :on-change #(setv! :name %)}])
         (field "Creative brief" [:textarea {:class $input :rows 3 :value brief :on-change #(setv! :brief %)}])
         (field "参照画像 / CID" [:input {:class $input :value reference :on-change #(setv! :reference %)}])
-        (field "Murakumo endpoint" [:input {:class $input :type "url" :value endpoint :placeholder "https://…/api/gen" :on-change #(setv! :endpoint %)}])
+        (field "Murakumo endpoint" [:input {:class $input :type "url" :value endpoint :placeholder "https://…/v1/generation/vrm-compose" :on-change #(setv! :endpoint %)}])
+        (field "Murakumo API key" [:input {:class $input :type "password" :value api-key
+                                            :autocomplete "off" :placeholder "session only"
+                                            :on-change #(setv! :api-key %)}])
         (button "Planを更新" manifest! true)
         (button "Sample Project" load-sample!)
         [:div {:class $eyebrow} "RUNTIME"]

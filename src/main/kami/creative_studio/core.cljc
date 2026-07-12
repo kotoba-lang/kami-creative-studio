@@ -66,6 +66,17 @@
      :plan (compositor/authorized-plan! caps {:spec spec :output-resource output
                                               :preview-target :character-canvas})}))
 
+(defn murakumo-compose-request
+  "Portable Cloud Murakumo generation envelope for an arbitrary selection."
+  [selection]
+  (let [{:keys [plan caps]} (composition-context selection)]
+    {:schema "cloud.murakumo.gen-request/v1"
+     :function "vrm-compose"
+     :engine "kisekae"
+     :modality "vrm-compose"
+     :model "kisekae-v1"
+     :params {:plan plan :caps caps}}))
+
 (defn preview-artifact
   "Resolve the static real-VRM fixture for one donor override. Arbitrary
    multi-part combinations deliberately return nil and require Murakumo."

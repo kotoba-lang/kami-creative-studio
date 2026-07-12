@@ -116,6 +116,7 @@
                (try (js->clj (js/JSON.parse text) :keywordize-keys true)
                     (catch :default _ {:message text}))))))
 
+(declare submit-compose!)
 (defn compose-selection! [selection]
   (try
     (let [{:keys [plan]} (core/composition-context selection)
@@ -127,7 +128,9 @@
             (load-artifact! artifact)
             (notify! "build生成済み実VRM compositionを表示しました"))
         (do (swap! state assoc :composition-state :remote-required :status :planned)
-            (notify! "複数part compositionはMurakumo endpointで生成してください"))))
+            (if (str/blank? (:endpoint @state))
+              (notify! "複数part compositionにはMurakumo endpointが必要です")
+              (submit-compose! selection)))))
     (catch :default e
       (swap! state assoc :composition-state :failed :composition-error (.-message e))
       (notify! (str "capability plan失敗: " (.-message e))))))
@@ -180,17 +183,34 @@
         (.catch (fn [e] (swap! state assoc :status :failed) (notify! (str "進捗取得失敗: " (.-message e))))))
    1500))
 
+(defn post-job! [payload success-message]
+  (swap! state assoc :status :submitting :progress 1)
+  (-> (js/fetch (:endpoint @state)
+                #js {:method "POST" :headers #js {"content-type" "application/json"}
+                     :body (js/JSON.stringify (clj->js payload))})
+      (.then (fn [response]
+               (if (.-ok response) (parse-json response)
+                   (throw (js/Error. (str "HTTP " (.-status response)))))))
+      (.then (fn [body]
+               (swap! state assoc :status :queued :composition-state :queued)
+               (handle-job-response! body)
+               (notify! success-message)))
+      (.catch (fn [e]
+                (swap! state assoc :status :failed :composition-state :failed
+                       :composition-error (.-message e))
+                (notify! (str "送信失敗: " (.-message e)))))))
+
+(defn submit-compose! [selection]
+  (post-job! (core/murakumo-compose-request selection)
+             "VRM compositionをMurakumoへ送信しました"))
+
 (defn submit! []
   (when-let [m (or (:manifest @state) (manifest!))]
     (if (str/blank? (:endpoint @state))
       (notify! "Murakumo endpointを入力してください")
-      (do (swap! state assoc :status :submitting :progress 1)
-          (-> (js/fetch (:endpoint @state)
-                        #js {:method "POST" :headers #js {"content-type" "application/json"}
-                             :body (js/JSON.stringify (clj->js m))})
-              (.then (fn [response] (if (.-ok response) (parse-json response) (throw (js/Error. (str "HTTP " (.-status response)))))))
-              (.then (fn [body] (swap! state assoc :status :queued) (handle-job-response! body) (notify! "Murakumoへ送信しました")))
-              (.catch (fn [e] (swap! state assoc :status :failed) (notify! (str "送信失敗: " (.-message e))))))))))
+      (if (= :remote-required (:composition-state @state))
+        (submit-compose! (:selection @state))
+        (post-job! m "Murakumoへ送信しました")))))
 
 (defn file-change! [e]
   (when-let [file (aget (.. e -target -files) 0)]

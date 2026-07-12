@@ -48,6 +48,15 @@
     (is (= :asset/fetch (get-in plan [:plan/phases 0 :phase])))
     (is (= :vrm/export (get-in plan [:plan/phases 8 :phase])))))
 
+(deftest creates-capability-carrying-murakumo-compose-request
+  (let [request (core/murakumo-compose-request
+                 {:body {:source "https://assets.test/base.vrm"}
+                  :hair {:source "https://assets.test/hair.vrm"}})]
+    (is (= "vrm-compose" (:function request)))
+    (is (= "kisekae" (:engine request)))
+    (is (= 1 (get-in request [:params :plan :kisekae.plan/version])))
+    (is (every? (comp seq :cap/provenance) (get-in request [:params :caps])))))
+
 (deftest resolves-real-preview-artifacts-without-fallback
   (let [constraint "https://assets.test/constraint.vrm"
         seed "https://assets.test/seed.vrm"

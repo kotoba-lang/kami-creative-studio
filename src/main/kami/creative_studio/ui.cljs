@@ -6,10 +6,11 @@
             [shadow.css :refer [css]]
             [kami.creative-studio.core :as core]))
 
-(def $body (css {:margin "0" :background "#080b12" :color "#f0f3f8" :overflow "hidden"
+(def $body (css {:margin "0" :background "#080b12" :color "#f0f3f8" :overflow "hidden" :color-scheme "dark"
                  :font-family "Inter,ui-sans-serif,system-ui,-apple-system,Hiragino Sans,sans-serif"}))
 (def $top (css {:height "54px" :display "grid" :grid-template-columns "1fr auto 1fr" :align-items "center"
-                :padding "0 14px" :border-bottom "1px solid #253044" :background "#111722e8" :backdrop-filter "blur(20px)" :z-index "5"}))
+                :padding "env(safe-area-inset-top,0px) 14px 0 14px"
+                :border-bottom "1px solid #253044" :background "#111722e8" :backdrop-filter "blur(20px)" :z-index "5"}))
 (def $brand (css {:font-weight "900" :letter-spacing ".08em" :color "#f0f3f8" :text-decoration "none"}))
 (def $actions (css {:display "flex" :gap "8px" :align-items "center" :justify-content "flex-end"}))
 (def $badge (css {:font-size "10px" :font-weight "800" :letter-spacing ".12em" :border "1px solid #33415a" :border-radius "20px" :padding "6px 9px"}))
@@ -26,7 +27,8 @@
                  ["&:focus" {:outline "1px solid #80ead0" :border-color "#80ead0"}]))
 (def $button (css {:border "1px solid #33415a" :background "#131b28" :color "#f0f3f8" :border-radius "10px" :padding "8px 11px" :min-height "44px"
                    :font-weight "800" :cursor "pointer"}
-                  ["&:hover" {:border-color "#80ead0"}] ["&:disabled" {:opacity "0.35" :cursor "not-allowed"}]))
+                  ["&:hover" {:border-color "#80ead0"}] ["&:disabled" {:opacity "0.35" :cursor "not-allowed"}]
+                  ["&:focus-visible" {:outline "2px solid #80ead0" :outline-offset "2px"}]))
 (def $primary (css {:background "#80ead0" :border-color "#80ead0" :color "#07110e"}))
 (def $main (css {:min-width "0" :padding "14px" :background "#080d15" :overflow "hidden"}))
 (def $head (css {:display "flex" :justify-content "space-between" :align-items "end" :gap "12px" :margin-bottom "24px"}))
@@ -36,7 +38,8 @@
 (def $empty (css {:height "100%" :display "grid" :place-content "center" :text-align "center" :gap "6px" :color "#8c98aa"}))
 (def $preview-actions (css {:display "flex" :gap "7px" :align-items "center" :padding "9px 12px" :overflow-x "auto"}
                            ["& label" {:min-width "210px"}]))
-(def $file (css {:border "1px solid #33415a" :border-radius "8px" :padding "11px 14px" :cursor "pointer" :position "relative" :overflow "hidden"}))
+(def $file (css {:border "1px solid #33415a" :border-radius "8px" :padding "11px 14px" :cursor "pointer" :position "relative" :overflow "hidden"}
+                ["&:focus-within" {:outline "2px solid #80ead0" :outline-offset "2px"}]))
 (def $hidden-file (css {:position "absolute" :opacity "0" :width "1px" :height "1px"}))
 (def $progress (css {:height "26px" :background "#090d15" :position "relative" :border-top "1px solid #253044"}))
 (def $progress-bar (css {:height "100%" :background "linear-gradient(90deg,#375f78,#80ead0)" :transition "width .25s"}))
@@ -54,14 +57,16 @@
                          ["@media(max-width:650px)" {:grid-template-columns "1fr"}]))
 (def $trait-card (css {:border "1px solid #253044" :background "#0a1019" :color "#b9c1ce" :border-radius "9px"
                        :padding "10px" :cursor "pointer" :text-align "left" :font "inherit"}
-                      ["&:hover" {:border-color "#80ead0"}]))
+                      ["&:hover" {:border-color "#80ead0"}]
+                      ["&:focus-visible" {:outline "2px solid #80ead0" :outline-offset "2px"}]))
 (def $trait-selected (css {:border-color "#80ead0" :background "#142a2a" :color "#f0f3f8"}))
 (def $pipeline (css {:display "grid" :grid-template-columns "repeat(4,1fr)" :gap "8px"}
                      ["@media(max-width:700px)" {:grid-template-columns "1fr 1fr"}]))
 (def $stage (css {:border "1px solid #253044" :border-radius "10px" :padding "9px" :background "#111824"}))
 (def $stage-name (css {:font-size "10px" :color "#80ead0" :font-weight "800" :letter-spacing ".12em"}))
 (def $runbar (css {:position "absolute" :left "0" :right "0" :bottom "0" :min-height "72px" :border-top "1px solid #253044" :background "#0b1019"
-                  :display "flex" :align-items "center" :justify-content "space-between" :gap "12px" :padding "12px clamp(18px,4vw,52px)"}))
+                  :display "flex" :align-items "center" :justify-content "space-between" :gap "12px"
+                  :padding "12px clamp(18px,4vw,52px) max(12px,env(safe-area-inset-bottom)) clamp(18px,4vw,52px)"}))
 (def $toast (css {:position "fixed" :right "20px" :bottom "92px" :background "#172131" :border "1px solid #33415a" :padding "11px 15px" :border-radius "8px" :z-index "10"}))
 (def $runtime (css {:display "flex" :flex-wrap "wrap" :gap "7px" :padding "0 18px 14px" :color "#8c98aa" :font "10px ui-monospace"}))
 (def $source-link (css {:color "#80ead0" :text-decoration "none"}))

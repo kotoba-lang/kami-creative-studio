@@ -15,11 +15,15 @@
   [:html {:lang "ja"}
    [:head
     [:meta {:charset "utf-8"}]
-    [:meta {:name "viewport" :content "width=device-width,initial-scale=1"}]
+    [:meta {:name "viewport" :content "width=device-width,initial-scale=1,viewport-fit=cover"}]
     [:meta {:name "theme-color" :content "#080b12"}]
     [:meta {:name "description" :content "KAMI Creative Studio — realtime VRM generation, preview and character editing."}]
     [:title "KAMI Creative Studio"]
     [:link {:rel "stylesheet" :href "css/ui.css"}]
+    ;; global reduced-motion reset (WCAG 2.3.3) — shadow-css's per-class @media
+    ;; syntax scopes to that one class, not a universal selector, so this one
+    ;; genuinely-global rule is hand-written here instead of via a $var.
+    [:style "@media (prefers-reduced-motion: reduce) { *,*::before,*::after { transition-duration: .001ms !important; animation-duration: .001ms !important; } }"]
     [:script {:type "module" :src "vendor/model-viewer/model-viewer.min.js"}]]
    [:body
     [:div#app {:aria-live "polite"} "KAMI Creative Studio loading…"]

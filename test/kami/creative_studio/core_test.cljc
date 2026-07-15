@@ -12,6 +12,44 @@
     (is (= "motion" (get-in m [:stages 2 :modality])))
     (is (= true (get-in m [:policy :noSilentFallback])))))
 
+(deftest compiles-portable-2d-and-3d-saturation-plans
+  (doseq [dimension ["2d" "3d"]]
+    (let [plan (core/benchmark-plan
+                {:dimension dimension :workload "sprite-or-mesh-density"
+                 :start 100 :step 200 :max 550 :duration-ms 5000 :warmup-frames 90
+                 :budgets {:frameTimeP95Ms 16.7 :memoryMaxMiB 1024}})]
+      (is (= "kami.performance-plan/v1" (:schema plan)))
+      (is (= [100 300 500 550] (mapv :entities (:samples plan)))
+          "the explicit ceiling is always measured even off the step boundary")
+      (is (every? #(= 5000 (:durationMs %)) (:samples plan)))
+      (is (every? #(= 90 (:warmupFrames %)) (:samples plan)))
+      (is (true? (:stopOnFirstViolation plan))))))
+
+(deftest rejects-ambiguous-or-unbounded-benchmark-plans
+  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+               (core/benchmark-plan
+                {:dimension "vr" :workload "mesh-density"
+                 :budgets {:frameTimeP95Ms 16.7 :memoryMaxMiB 1024}})))
+  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+               (core/benchmark-plan
+                {:dimension "3d" :workload "mesh-density" :max 0
+                 :budgets {:frameTimeP95Ms 16.7 :memoryMaxMiB 1024}})))
+  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+               (core/benchmark-plan
+                {:dimension "2d" :workload "sprites" :warmup-frames -1
+                 :budgets {:frameTimeP95Ms 16.7 :memoryMaxMiB 1024}}))))
+
+(deftest embeds-performance-contract-in-project-manifest
+  (let [m (core/project-manifest
+           {:id "project-1" :name "A" :brief "B" :motion-preset :idle
+            :duration 4 :edits [] :created-at "2026-07-15T00:00:00Z"
+            :performance {:dimension "3d" :workload "crowd"
+                          :start 256 :step 256 :max 1024
+                          :budgets {:frameTimeP95Ms 16.7 :memoryMaxMiB 1536}}})]
+    (is (= "3d" (get-in m [:performance :dimension])))
+    (is (= [256 512 768 1024]
+           (mapv :entities (get-in m [:performance :samples]))))))
+
 (deftest extracts-realtime-artifact-contract
   (testing "direct and artifact-list response shapes"
     (is (= "x.vrm" (core/artifact-url {:artifactUrl "x.vrm"})))

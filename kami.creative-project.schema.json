@@ -32,6 +32,36 @@
         "operations": { "type": "array", "items": { "type": "object" } }
       }
     },
+    "performance": {
+      "type": "object",
+      "required": ["schema", "dimension", "workload", "samples", "budgets", "stopOnFirstViolation"],
+      "properties": {
+        "schema": { "const": "kami.performance-plan/v1" },
+        "dimension": { "enum": ["2d", "3d"] },
+        "workload": { "type": "string", "minLength": 1 },
+        "samples": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["entities", "durationMs", "warmupFrames"],
+            "properties": {
+              "entities": { "type": "integer", "minimum": 1 },
+              "durationMs": { "type": "integer", "minimum": 1 },
+              "warmupFrames": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "budgets": {
+          "type": "object",
+          "required": ["frameTimeP95Ms", "memoryMaxMiB"],
+          "properties": {
+            "frameTimeP95Ms": { "type": "number", "exclusiveMinimum": 0 },
+            "memoryMaxMiB": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "stopOnFirstViolation": { "const": true }
+      }
+    },
     "policy": {
       "type": "object",
       "required": ["noSilentFallback", "artifactAddressing", "credentialsInManifest"],

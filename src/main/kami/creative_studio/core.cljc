@@ -8,6 +8,40 @@
 
 (def trait-order [:body :hair :face :outfit :accessory])
 
+(def performance-dimensions #{"2d" "3d"})
+
+(defn benchmark-plan
+  "Compile a portable, deterministic saturation plan shared by Studio, SDKs and
+   runners. The runner advances through the entity ramp and stops at the first
+   sample that violates either frame-time or memory budget."
+  [{:keys [dimension workload start step max duration-ms warmup-frames budgets]
+    :or {start 100 step 100 max 1000 duration-ms 10000 warmup-frames 120}}]
+  (when-not (performance-dimensions dimension)
+    (throw (ex-info "dimension must be 2d or 3d" {:dimension dimension})))
+  (when-not (and (string? workload) (seq workload))
+    (throw (ex-info "workload is required" {:workload workload})))
+  (when-not (and (pos-int? start) (pos-int? step) (pos-int? max)
+                 (<= start max) (pos-int? duration-ms)
+                 (int? warmup-frames) (not (neg? warmup-frames)))
+    (throw (ex-info "invalid benchmark ramp" {:start start :step step :max max
+                                                :duration-ms duration-ms
+                                                :warmup-frames warmup-frames})))
+  (when-not (and (number? (:frameTimeP95Ms budgets))
+                 (pos? (:frameTimeP95Ms budgets))
+                 (number? (:memoryMaxMiB budgets))
+                 (pos? (:memoryMaxMiB budgets)))
+    (throw (ex-info "positive frameTimeP95Ms and memoryMaxMiB budgets are required"
+                    {:budgets budgets})))
+  {:schema "kami.performance-plan/v1"
+   :dimension dimension
+   :workload workload
+   :samples (mapv (fn [entities]
+                    {:entities entities :durationMs duration-ms
+                     :warmupFrames warmup-frames})
+                  (->> (conj (vec (range start max step)) max) distinct sort))
+   :budgets budgets
+   :stopOnFirstViolation true})
+
 (defn select-trait
   "Select one asset per slot without coupling the composition domain to a renderer."
   [selection {:keys [slot id source]}]
@@ -93,8 +127,8 @@
       :else nil)))
 
 (defn project-manifest
-  [{:keys [id name brief reference motion-preset duration edits created-at]}]
-  {:schema "kami.creative-project/v1"
+  [{:keys [id name brief reference motion-preset duration edits created-at performance]}]
+  (cond-> {:schema "kami.creative-project/v1"
    :id id
    :name name
    :brief brief
@@ -114,7 +148,8 @@
                :operations (vec edits)}
    :policy {:noSilentFallback true
             :artifactAddressing "CID"
-            :credentialsInManifest false}})
+            :credentialsInManifest false}}
+    performance (assoc :performance (benchmark-plan performance))))
 
 (defn artifact-url
   "Extract a browser-renderable model URL from common Murakumo response shapes."

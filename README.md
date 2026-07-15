@@ -37,6 +37,12 @@ Heavy model, rig and music inference requires a configured remote GPU capability
 
 The generated document is `kami.creative-project/v1`. Every stage declares its modality, model, input relationship, output kinds and required execution capability. `noSilentFallback` is always true.
 
+Projects may also carry a `kami.performance-plan/v1` contract. It gives 2D and
+3D samples the same deterministic entity ramp (including its explicit ceiling),
+configurable warmup, measurement duration,
+frame-time budget and memory budget, so SDK and browser runners can locate the
+actual saturation point without Studio inventing renderer-specific behavior.
+
 ## Local development
 
 ```sh

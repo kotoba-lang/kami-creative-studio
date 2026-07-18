@@ -32,6 +32,9 @@ jobs:
           git clone --depth 1 https://github.com/kotoba-lang/org-vrmc-vrm.git ../org-vrmc-vrm
           git clone --depth 1 https://github.com/kotoba-lang/org-khronos-glb.git ../org-khronos-glb
           git clone --depth 1 https://github.com/kotoba-lang/kotoba-lang.git ../kotoba-lang
+          git clone --depth 1 https://github.com/kotoba-lang/kami-eizo-timeline.git ../kami-eizo-timeline
+          git clone --depth 1 https://github.com/kotoba-lang/kami-ongaku-project.git ../kami-ongaku-project
+          git clone --depth 1 https://github.com/kotoba-lang/douga.git ../douga
       - run: npm ci
       - run: npm run release
       - uses: actions/configure-pages@v5

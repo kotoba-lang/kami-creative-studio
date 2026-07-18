@@ -4,7 +4,8 @@
             [reagent.core :as r]
             [reagent.dom :as rdom]
             [shadow.css :refer [css]]
-            [kami.creative-studio.core :as core]))
+            [kami.creative-studio.core :as core]
+            [kami.creative-studio.media :as media]))
 
 (def $body (css {:margin "0" :background "#080b12" :color "#f0f3f8" :overflow "hidden" :color-scheme "dark"
                  :font-family "Inter,ui-sans-serif,system-ui,-apple-system,Hiragino Sans,sans-serif"}))
@@ -72,6 +73,12 @@
 (def $source-link (css {:color "#80ead0" :text-decoration "none"}))
 (def $inspector (css {:grid-column "3" :grid-row "1" :border-left "1px solid #253044" :min-width "0" :overflow "hidden" :display "grid" :grid-template-rows "auto minmax(0,1fr)"}))
 (def $timeline (css {:grid-column "1 / 4" :grid-row "2" :border-top "1px solid #253044" :background "#101722" :padding "10px 14px" :display "grid" :grid-template-columns "180px 1fr auto" :gap "12px" :align-items "center"}))
+(def $lanes (css {:display "grid" :gap "5px"}))
+(def $lane (css {:height "26px" :display "grid" :grid-template-columns "58px 1fr" :align-items "center" :gap "7px"}))
+(def $lane-name (css {:font "800 9px ui-monospace" :color "#8c98aa"}))
+(def $lane-rail (css {:height "20px" :position "relative" :border-radius "4px" :background "#080d15" :overflow "hidden"}))
+(def $clip (css {:position "absolute" :inset "2px" :border-radius "3px" :background "linear-gradient(90deg,#2d6d68,#80ead0)" :color "#07110e" :padding "2px 7px" :font "800 9px ui-monospace" :white-space "nowrap" :overflow "hidden"}))
+(def $audio-clip (css {:background "linear-gradient(90deg,#61458a,#b9a0ec)"}))
 (def $toolbar-title (css {:font-size "13px" :font-weight "700" :text-align "center"}))
 
 (def official-vrm-url
@@ -82,7 +89,8 @@
 (defonce state
   (r/atom {:name "Untitled character" :brief "" :reference "" :endpoint "" :api-key "" :artifact-url ""
            :motion-preset :dance :duration 4 :edits [] :tab :editor :status :ready :progress 0
-           :manifest nil :toast nil :object-url nil :selection {} :random-seed 1
+           :manifest nil :media-project nil :playhead-frame 0 :playing? false
+           :toast nil :object-url nil :selection {} :random-seed 1
            :composition-state :idle :composition-error nil :composition-plan nil}))
 
 (def trait-catalog
@@ -98,6 +106,25 @@
 
 (defn setv! [k e] (swap! state assoc k (.. e -target -value)))
 (defn notify! [s] (swap! state assoc :toast s) (js/setTimeout #(swap! state assoc :toast nil) 2200))
+(defonce transport-timer (atom nil))
+
+(defn stop-transport! []
+  (when-let [timer @transport-timer] (js/clearInterval timer))
+  (reset! transport-timer nil)
+  (swap! state assoc :playing? false))
+
+(defn toggle-transport! []
+  (if (:playing? @state)
+    (stop-transport!)
+    (let [total (max 1 (* 30 (:duration @state)))]
+      (swap! state assoc :playing? true)
+      (reset! transport-timer
+              (js/setInterval
+               #(swap! state update :playhead-frame
+                       (fn [frame]
+                         (let [next-frame (inc (or frame 0))]
+                           (if (< next-frame total) next-frame 0))))
+               (/ 1000 30))))))
 
 (defn manifest! []
   (let [s @state]
@@ -109,6 +136,42 @@
                 :edits (:edits s) :created-at (.toISOString (js/Date.))})]
         (swap! state assoc :manifest m :status :planned)
         (notify! "制作planを更新しました") m))))
+
+(defn media-project! []
+  (let [{:keys [name duration artifact-url]} @state
+        frames (* 30 duration)
+        ticks (* 960 duration)
+        picture-id "picture"
+        music-id "music"
+        p (media/project
+           {:id (str "media-" (.toString (js/Date.now) 36)) :name name
+            :video {:timeline/timebase {:num 30 :den 1 :drop-frame? false}
+                    :timeline/tracks
+                    [{:track/id :v1 :track/type :video :track/transitions [] :track/effect-stack []
+                      :track/enabled? true :track/muted? false :track/locked? false
+                      :track/clips [{:clip/id :picture :clip/source-id picture-id
+                                     :clip/source-in 0 :clip/source-out frames
+                                     :clip/timeline-start 0 :clip/duration frames :clip/effect-stack []}]}]
+                    :timeline/markers []}
+            :music {:project/ppq 480 :project/sample-rate 48000
+                    :project/tempo-map [{:tempo-point/tick 0 :tempo-point/bpm 120
+                                         :tempo-point/time-sig [4 4]}]
+                    :project/tracks [{:track/id "music" :track/type :audio :track/name "Music"
+                                      :track/mute? false :track/solo? false :track/armed? false
+                                      :track/output-bus "master"}]
+                    :project/buses [{:bus/id "master" :bus/name "Master"
+                                     :bus/inputs #{"music"} :bus/plugin-chain []}]
+                    :project/clips [{:clip/id "theme" :clip/track-id "music"
+                                     :clip/start-tick 0 :clip/length-ticks ticks
+                                     :clip/content {:audio/uri music-id}}]
+                    :project/automation []}
+            :assets [{:asset/id picture-id :asset/kind :video
+                      :asset/path (if (str/blank? artifact-url) "cid:pending-picture" artifact-url)}
+                     {:asset/id music-id :asset/kind :audio :asset/path "cid:pending-music"}]
+            :output {:width 1920 :height 1080 :fps 30}})]
+    (swap! state assoc :media-project p :playhead-frame 0 :tab :composer)
+    (notify! (if (media/valid-project? p) "映像・音楽projectを同期しました" "project validationに失敗しました"))
+    p))
 
 (defn load-artifact! [url]
   (when (seq url)
@@ -338,6 +401,52 @@
    (for [[id label detail] [[:model "MODEL" "TRELLIS"] [:rig "RIG" "UniRig"] [:motion "MOTION" "EDN retarget"] [:music "MUSIC" "ACE-Step"]]]
      ^{:key id} [:div {:class $stage} [:div {:class $stage-name} label] [:strong detail]])])
 
+(defn composer-panel []
+  (let [p (:media-project @state)
+        problems (when p (media/validate-project p))]
+    [:section {:class $panel}
+     [:div {:class $eyebrow} "MEDIA PROJECT · VIDEO + MUSIC"]
+     [:h3 "Unified composition"]
+     [:p {:class $muted} "映像はframe、音楽はtickのnative単位を保ち、transportだけを同期します。"]
+     (button "現在の素材から同期" media-project! true)
+     (when p
+       [:div
+        [:p [:strong (if (empty? problems) "VALID" (str (count problems) " PROBLEMS"))]
+         " · " (media/video-duration-seconds p) "s video · " (media/music-duration-seconds p) "s music"]
+        [:div {:class $form}
+         (field "Playhead"
+                [:input {:class $input :type "range" :min 0
+                         :max (max 0 (dec (* 30 (:duration @state))))
+                         :value (:playhead-frame @state)
+                         :on-change #(swap! state assoc :playhead-frame
+                                            (js/parseInt (.. % -target -value)))}])
+         [:div {:class $actions}
+          (button "−1 frame" #(swap! state update :playhead-frame (fn [n] (max 0 (dec n)))))
+          (button "Split V1" #(let [frame (:playhead-frame @state)]
+                                 (swap! state update :media-project
+                                        media/split-video-clip :picture frame
+                                        (keyword (str "picture-" frame)))))
+          (button "+1 frame" #(swap! state update :playhead-frame
+                                     (fn [n] (min (dec (* 30 (:duration @state))) (inc n)))))] ]
+        [:pre (with-out-str (cljs.pprint/pprint p))]])]))
+
+(defn timeline-lanes []
+  (let [p (:media-project @state)
+        frame (:playhead-frame @state)
+        transport (when p (media/playhead p frame))]
+  [:div {:class $lanes}
+   [:div {:class $lane} [:span {:class $lane-name} "V1 VIDEO"]
+    [:div {:class $lane-rail}
+     [:span {:class $clip} (or (:name @state) "Picture")]
+     [:i {:style {:position "absolute" :top 0 :bottom 0
+                  :left (str (* 100 (/ frame (max 1 (* 30 (:duration @state))))) "%")
+                  :width "2px" :background "#fff" :z-index 2}}]]]
+   [:div {:class $lane} [:span {:class $lane-name} "A1 MUSIC"]
+    [:div {:class $lane-rail} [:span {:class (str $clip " " $audio-clip)}
+                                     (if transport
+                                       (str (:transport/timecode transport) " · tick " (:transport/tick transport))
+                                       "Theme · 120 BPM")]]]]))
+
 (defn app []
   (let [{:keys [name brief reference endpoint api-key tab status toast]} @state]
     [:div
@@ -357,6 +466,7 @@
                                             :autocomplete "off" :placeholder "session only"
                                             :on-change #(setv! :api-key %)}])
         (button "Planを更新" manifest! true)
+        (button "Video + Musicを同期" media-project!)
         (button "Sample Project" load-sample!)
         [:div {:class $eyebrow} "RUNTIME"]
         [:div {:class $muted} "CLJS host · WebGPU direct\nKotoba Wasm · guest logic"]]]
@@ -365,13 +475,19 @@
       [:aside {:class $inspector}
        [:div {:class $tabs}
         (button "Inspector" #(swap! state assoc :tab :editor) (= tab :editor))
+        (button "Composer" #(swap! state assoc :tab :composer) (= tab :composer))
         (button "Manifest" #(swap! state assoc :tab :manifest) (= tab :manifest))]
-       (if (= tab :editor) [editor]
-           [:section {:class $panel} [:div {:class $eyebrow} "PROJECT MANIFEST"] [:pre (with-out-str (cljs.pprint/pprint (:manifest @state)))]])]
+       (case tab
+         :editor [editor]
+         :composer [composer-panel]
+         [:section {:class $panel} [:div {:class $eyebrow} "PROJECT MANIFEST"] [:pre (with-out-str (cljs.pprint/pprint (:manifest @state)))]] )]
       [:footer {:class $timeline}
        [:div [:div {:class $eyebrow} "TIMELINE"] [:strong (str/capitalize (clojure.core/name (:motion-preset @state))) " · " (:duration @state) "s"]]
-       [pipeline]
-       [:div {:class $actions} (button "◀" #(notify! "previous frame")) (button "▶" #(notify! "motion preview")) (button "●" #(notify! "record armed"))]]]
+       [timeline-lanes]
+       [:div {:class $actions}
+        (button "◀" #(swap! state update :playhead-frame (fn [n] (max 0 (dec n)))))
+        (button (if (:playing? @state) "❚❚" "▶") toggle-transport! true)
+        (button "●" #(notify! "record armed"))]]]
      (when toast [:div {:class $toast} toast])]))
 
 (defn ^:export init! []

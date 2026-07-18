@@ -19,6 +19,7 @@
     [:meta {:name "theme-color" :content "#080b12"}]
     [:meta {:name "description" :content "KAMI Creative Studio — realtime VRM generation, preview and character editing."}]
     [:title "KAMI Creative Studio"]
+    [:link {:rel "icon" :href "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%2380ead0'/><path d='M8 16h16M16 8v16' stroke='%2307110e' stroke-width='3'/></svg>"}]
     [:link {:rel "stylesheet" :href "css/ui.css"}]
     ;; global reduced-motion reset (WCAG 2.3.3) — shadow-css's per-class @media
     ;; syntax scopes to that one class, not a universal selector, so this one

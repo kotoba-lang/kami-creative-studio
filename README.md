@@ -1,5 +1,47 @@
 # KAMI Creative Studio
 
+KAMI Creative Studio is also the integrated video-and-music composer. It
+authors `kami.media-project/v1`, a plain-EDN document that binds the canonical
+`kami-eizo-timeline` video EDL to the canonical `kami-ongaku-project` DAW
+session without copying either model.
+
+```clojure
+(require '[kami.creative-studio.media :as media])
+
+(def production
+  (media/project {:id "film-1"
+                  :name "Opening"
+                  :video eizo-timeline
+                  :music ongaku-project
+                  :assets asset-registry
+                  :output {:width 1920 :height 1080 :fps 30}}))
+
+(media/validate-project production)
+(media/playhead production 60)        ; frame, SMPTE, seconds and music tick
+(media/render-plan production "/tmp/render") ; pure ffmpeg command vectors
+```
+
+The binding deliberately preserves integer frames on the video side and
+integer ticks on the music side. Seconds are derived for transport and sync
+validation; a changing tempo map is never flattened by guessing. Asset ids
+are resolved through `:media/assets`, and the render plan remains pure data —
+the browser or fleet host owns file access and process execution. A complete
+editable fixture lives at `resources/samples/media-project.edn`.
+
+The Composer inspector and bottom V1/A1 lanes expose the unified document in
+the existing single-window Studio. It includes frame seek, a real 30fps
+transport, SMPTE/tick display, split-at-playhead, and pure move/trim/split
+operations. Variable-tempo transport integrates every tempo segment in both
+directions instead of assuming a constant BPM. The render planner distinguishes
+still images from moving video, trims video at source time, normalizes stream
+layout, concatenates picture and mixes the music master.
+
+Current declared maturity: **逍遥 / production-authoring**. This means the
+project can be authored, validated, transported and rendered end-to-end without
+a mock execution boundary. It does not claim feature parity with Premiere or
+Logic: waveform/thumbnail caching, pointer drag handles, multi-selection and
+undo history remain ergonomic extensions over the working edit operations.
+
 Open, credential-free creator UI for a CID-linked Murakumo pipeline:
 
 ```text
@@ -43,6 +85,14 @@ The generated document is `kami.creative-project/v1`. Every stage declares its m
 npm ci
 npm run release
 python3 -m http.server 4173 --directory public
+```
+
+Verification:
+
+```sh
+clojure -M:test
+# real ffmpeg + ffprobe; invoke through the workspace resource guard
+clojure -M:e2e
 ```
 
 Then open `http://localhost:4173`. The authored UI is ClojureScript Hiccup/Reagent. Styling is extracted from `shadow.css/css` forms; the GitHub Pages shell is generated from Hiccup during release. There are no hand-authored HTML or CSS files.

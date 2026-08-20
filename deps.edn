@@ -2,8 +2,7 @@
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         kotoba-lang/kisekae {:git/url "https://github.com/kotoba-lang/kisekae.git"
                                      :git/sha "34391c451b34fae7c4de1e172177a8fedc643396"}
-        kotoba-lang/kami-eizo-timeline {:git/url "https://github.com/kotoba-lang/kami-eizo-timeline.git"
-                                     :git/sha "c0116940f19eb1ca70a8f050c9f22d0513e3b8a7"}
+        io.github.kotoba-lang/kami-eizo-timeline {:git/sha "c0116940f19eb1ca70a8f050c9f22d0513e3b8a7"}
         kotoba-lang/kami-ongaku-project {:git/url "https://github.com/kotoba-lang/kami-ongaku-project.git"
                                      :git/sha "6a14e1814a893f690aa0133ecbceff7478ca7f41"}
         kotoba-lang/douga {:git/url "https://github.com/kotoba-lang/douga.git"

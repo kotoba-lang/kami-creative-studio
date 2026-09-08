@@ -1,5 +1,5 @@
 (ns kami.creative-studio.ui
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [cljs.pprint]
             [reagent.core :as r]
             [reagent.dom :as rdom]
@@ -328,7 +328,7 @@
     [:section {:class $preview}
      [:div {:class $preview-head}
       [:div [:div {:class $eyebrow} "REALTIME PREVIEW"] [:h3 "VRM / GLB Viewer"]]
-      [:span {:class $badge} (str/upper-case (name status))]]
+      [:span {:class $badge} (str/upper (name status))]]
      [:model-viewer {:id "modelViewer" :class $viewer :src (when (seq artifact-url) artifact-url)
                      :camera-controls true :autoplay true :shadow-intensity "1" :environment-image "neutral"
                      :on-load #(swap! state assoc :status :preview :progress 100)}
@@ -368,7 +368,7 @@
      (for [slot core/trait-order]
        ^{:key slot}
        [:div {:class $trait-row}
-        [:div {:class $trait-label} (str/upper-case (name slot))]
+        [:div {:class $trait-label} (str/upper (name slot))]
         [:div {:class $trait-options}
          (for [asset (get trait-catalog slot)]
            ^{:key (:id asset)}
@@ -453,7 +453,7 @@
      [:header {:class $top}
       [:a {:class $brand :href "#"} "神 KAMI"]
       [:div {:class $toolbar-title} (str name " · Creative Workspace")]
-      [:div {:class $actions} [:span {:class $badge} (str/upper-case (clojure.core/name status))] (button "生成" submit! true (str/blank? endpoint))]]
+      [:div {:class $actions} [:span {:class $badge} (str/upper (clojure.core/name status))] (button "生成" submit! true (str/blank? endpoint))]]
      [:main {:class $workspace}
       [:aside {:class $aside} [:div {:class $eyebrow} "LIBRARY · PROJECT"] [:h1 {:class $title} "Character Project"]
        [:p {:class $muted} "Project、asset、生成sourceを一つのworkspaceで管理します。"]

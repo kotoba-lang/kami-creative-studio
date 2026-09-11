@@ -96,9 +96,9 @@ python3 -m http.server 4173 --directory public
 Verification:
 
 ```sh
-clojure -M:test
+kbb -M:test
 # real ffmpeg + ffprobe; invoke through the workspace resource guard
-clojure -M:e2e
+kbb -M:e2e
 ```
 
 Then open `http://localhost:4173`. The authored UI is ClojureScript Hiccup/Reagent. Styling is extracted from `shadow.css/css` forms; the GitHub Pages shell is generated from Hiccup during release. There are no hand-authored HTML or CSS files.

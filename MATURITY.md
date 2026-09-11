@@ -25,7 +25,7 @@ or invalidate the working authoring-to-master path proven by these gates.
 Regression commands:
 
 ```sh
-clojure -M:test
-clojure -M:e2e
-npx shadow-cljs release app
+kbb -M:test
+kbb -M:e2e
+amu compile --target wasm32-browser app
 ```

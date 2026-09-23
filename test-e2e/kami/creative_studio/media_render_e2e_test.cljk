@@ -1,7 +1,7 @@
 (ns kami.creative-studio.media-render-e2e-test
   (:require [clojure.java.io :as io]
             [clojure.java.shell :as shell]
-            [clojure.test :refer [deftest is]]
+            [kotoba.test :refer [deftest is]]
             [kami.creative-studio.media :as media]))
 
 (defn run-command! [cmd]

@@ -1,5 +1,5 @@
 (ns kami.creative-studio.media-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kami.creative-studio.media :as media]))
 
 (def project

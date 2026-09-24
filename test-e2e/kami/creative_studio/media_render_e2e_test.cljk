@@ -14,8 +14,8 @@
     (doseq [child (reverse (file-seq file))] (io/delete-file child true))))
 
 (deftest real-ffmpeg-video-music-master
-  (let [dir (.toFile (java.nio.file.Files/createTempDirectory
-                      "kami-media-e2e" (make-array java.nio.file.attribute.FileAttribute 0)))
+  (let [dir (io/temp-dir
+                      "kami-media-e2e")
         path #(str (.getAbsolutePath dir) "/" %)
         source (path "source.mp4")
         song (path "song.wav")]

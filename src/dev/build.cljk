@@ -1,7 +1,7 @@
 (ns build
   (:require [clojure.java.io :as io]
             [kotoba.lang.edn :as edn]
-            [clojure.data.json :as json]
+            [kotoba.json :as json]
             [hiccup2.core :as h]
             [shadow.css.build :as css]
             [vrm.parse :as vrm-parse]

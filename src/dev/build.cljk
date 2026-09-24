@@ -1,5 +1,5 @@
 (ns build
-  (:require [clojure.java.io :as io]
+  (:require [kotoba.bytes :as kbytes] [clojure.java.io :as io]
             [kotoba.lang.edn :as edn]
             [kotoba.json :as json]
             [hiccup2.core :as h]
@@ -8,8 +8,7 @@
             [kisekae.spec :as kisekae-spec]
             [kisekae.edit :as kisekae-edit]
             [kisekae.build :as kisekae-build])
-  (:import [java.nio ByteBuffer ByteOrder]
-           [java.util Base64]))
+  (:import [java.nio ByteBuffer ByteOrder]))
 
 (def shell
   [:html {:lang "ja"}
@@ -52,7 +51,7 @@
         (edn/read-string (slurp (io/resource "samples/kami-sample.edn")))
         bytes (sample-bytes sample)
         position-bytes (* 4 3 (count positions))
-        encoded (.encodeToString (Base64/getEncoder) bytes)
+        encoded (kbytes/base64-encode bytes)
         mins (mapv #(apply min (map % positions)) [first second #(nth % 2)])
         maxs (mapv #(apply max (map % positions)) [first second #(nth % 2)])
         gltf {:asset {:version "2.0" :generator "KAMI Creative Studio Hiccup build"}

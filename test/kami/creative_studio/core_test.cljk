@@ -26,15 +26,15 @@
       (is (true? (:stopOnFirstViolation plan))))))
 
 (deftest rejects-ambiguous-or-unbounded-benchmark-plans
-  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+  (is (thrown? js/Error
                (core/benchmark-plan
                 {:dimension "vr" :workload "mesh-density"
                  :budgets {:frameTimeP95Ms 16.7 :memoryMaxMiB 1024}})))
-  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+  (is (thrown? js/Error
                (core/benchmark-plan
                 {:dimension "3d" :workload "mesh-density" :max 0
                  :budgets {:frameTimeP95Ms 16.7 :memoryMaxMiB 1024}})))
-  (is (thrown? #?(:clj clojure.lang.ExceptionInfo :cljs js/Error)
+  (is (thrown? js/Error
                (core/benchmark-plan
                 {:dimension "2d" :workload "sprites" :warmup-frames -1
                  :budgets {:frameTimeP95Ms 16.7 :memoryMaxMiB 1024}}))))

@@ -10,13 +10,13 @@
       (throw (ex-info "external command failed" {:cmd cmd :exit exit :err err})))))
 
 (defn delete-tree! [file]
-  (when (.exists file)
+  (when (io/exists? file)
     (doseq [child (reverse (file-seq file))] (io/delete-file child true))))
 
 (deftest real-ffmpeg-video-music-master
   (let [dir (io/temp-dir
                       "kami-media-e2e")
-        path #(str (.getAbsolutePath dir) "/" %)
+        path #(str (io/absolute-path dir) "/" %)
         source (path "source.mp4")
         song (path "song.wav")]
     (try
@@ -49,7 +49,7 @@
               :assets [{:asset/id "source" :asset/kind :video :asset/path source}
                        {:asset/id "song" :asset/kind :audio :asset/path song}]
               :output {:width 320 :height 180 :fps 30}})
-            plan (media/render-plan project (.getAbsolutePath dir))]
+            plan (media/render-plan project (io/absolute-path dir))]
         (is (media/valid-project? project))
         (doseq [segment (:render/segments plan)] (run-command! (:render segment)))
         (spit (path "segments.txt") (:render/concat-list plan))
